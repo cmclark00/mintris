@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- T-Tetromino -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,36h12v12h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,36h12v12h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,36h12v12h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,48h12v12h-12z" />
+    
+    <!-- L-Tetromino -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,60h12v12h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,72h12v12h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,72h12v12h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,72h12v12h-12z" />
+    
+    <!-- Subtle glow effect -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,36h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,36h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,36h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,48h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,60h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,72h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,72h12v12h-12z"
+        android:alpha="0.1" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,72h12v12h-12z"
+        android:alpha="0.1" />
+</vector> 
