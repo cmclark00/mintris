@@ -15,6 +15,7 @@ import com.mintris.databinding.ActivityMainBinding
 import com.mintris.game.GameHaptics
 import com.mintris.game.GameView
 import com.mintris.game.NextPieceView
+import com.mintris.game.TitleScreen
 import android.view.HapticFeedbackConstants
 import com.mintris.model.GameBoard
 import com.mintris.audio.GameMusic
@@ -27,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameHaptics: GameHaptics
     private lateinit var gameBoard: GameBoard
     private lateinit var gameMusic: GameMusic
+    private lateinit var titleScreen: TitleScreen
     
     // Game state
     private var isSoundEnabled = true
@@ -43,11 +45,35 @@ class MainActivity : AppCompatActivity() {
         gameBoard = GameBoard()
         gameHaptics = GameHaptics(this)
         gameView = binding.gameView
+        titleScreen = binding.titleScreen
         gameMusic = GameMusic(this)
         
         // Set up game view
         gameView.setGameBoard(gameBoard)
         gameView.setHaptics(gameHaptics)
+        
+        // Set up title screen
+        titleScreen.onStartGame = {
+            titleScreen.visibility = View.GONE
+            gameView.visibility = View.VISIBLE
+            binding.gameControlsContainer.visibility = View.VISIBLE
+            startGame()
+        }
+        
+        // Initially hide the game view and show title screen
+        gameView.visibility = View.GONE
+        binding.gameControlsContainer.visibility = View.GONE
+        titleScreen.visibility = View.VISIBLE
+        
+        // Set up pause button to show settings menu
+        binding.pauseButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            gameView.pause()
+            gameMusic.pause()
+            showPauseMenu()
+            binding.pauseStartButton.visibility = View.GONE
+            binding.resumeButton.visibility = View.VISIBLE
+        }
         
         // Set up next piece preview
         binding.nextPieceView.setGameView(gameView)
@@ -61,9 +87,6 @@ class MainActivity : AppCompatActivity() {
             gameMusic.setEnabled(isMusicEnabled)
             updateMusicToggleUI()
         }
-        
-        // Start game immediately
-        startGame()
         
         // Set up callbacks
         gameView.onGameStateChanged = { score, level, lines ->
@@ -99,7 +122,7 @@ class MainActivity : AppCompatActivity() {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             hideGameOver()
             gameView.reset()
-            gameView.start()
+            startGame()
         }
         
         binding.resumeButton.setOnClickListener {
@@ -118,14 +141,14 @@ class MainActivity : AppCompatActivity() {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             hidePauseMenu()
             gameView.reset()
-            gameView.start()
+            startGame()
         }
 
         binding.pauseRestartButton.setOnClickListener {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             hidePauseMenu()
             gameView.reset()
-            gameView.start()
+            startGame()
         }
 
         binding.pauseLevelUpButton.setOnClickListener {
@@ -250,50 +273,27 @@ class MainActivity : AppCompatActivity() {
         showPauseMenu()
     }
     
-    private fun pauseGame() {
-        gameView.pause()
-        gameMusic.pause()
-    }
-    
     private fun resumeGame() {
         gameView.resume()
         if (isMusicEnabled) {
-            gameMusic.start()
+            gameMusic.resume()
         }
+        // Force a redraw to ensure pieces aren't frozen
+        gameView.invalidate()
     }
     
     override fun onPause() {
         super.onPause()
-        if (!gameView.isGameOver()) {
-            pauseGame()
-            showPauseMenu()
-            binding.pauseStartButton.visibility = View.GONE
-            binding.resumeButton.visibility = View.VISIBLE
-        }
-    }
-    
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (binding.gameOverContainer.visibility == View.VISIBLE) {
-            hideGameOver()
-            gameView.reset()
-            return
-        }
-        
-        if (binding.pauseContainer.visibility == View.GONE) {
+        if (gameView.visibility == View.VISIBLE) {
             gameView.pause()
-            showPauseMenu()
-            binding.pauseStartButton.visibility = View.GONE
-            binding.resumeButton.visibility = View.VISIBLE
-        } else {
-            hidePauseMenu()
-            resumeGame()
+            gameMusic.pause()
         }
     }
     
     override fun onResume() {
         super.onResume()
-        if (!gameView.isGameOver()) {
+        // If we're on the title screen, don't auto-resume the game
+        if (titleScreen.visibility == View.GONE && gameView.visibility == View.VISIBLE && binding.gameOverContainer.visibility == View.GONE && binding.pauseContainer.visibility == View.GONE) {
             resumeGame()
         }
     }
@@ -301,5 +301,17 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         gameMusic.release()
+    }
+    
+    /**
+     * Show title screen (for game restart)
+     */
+    private fun showTitleScreen() {
+        gameView.reset()
+        gameView.visibility = View.GONE
+        binding.gameControlsContainer.visibility = View.GONE
+        binding.gameOverContainer.visibility = View.GONE
+        binding.pauseContainer.visibility = View.GONE
+        titleScreen.visibility = View.VISIBLE
     }
 } 

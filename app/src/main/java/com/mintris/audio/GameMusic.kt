@@ -59,6 +59,17 @@ class GameMusic(private val context: Context) {
         }
     }
     
+    fun resume() {
+        try {
+            Log.d("GameMusic", "Resuming music playback")
+            if (isEnabled && mediaPlayer?.isPlaying != true) {
+                mediaPlayer?.start()
+            }
+        } catch (e: Exception) {
+            Log.e("GameMusic", "Error resuming music", e)
+        }
+    }
+    
     fun stop() {
         try {
             Log.d("GameMusic", "Stopping music playback")

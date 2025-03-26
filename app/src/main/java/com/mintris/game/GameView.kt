@@ -664,9 +664,15 @@ class GameView @JvmOverloads constructor(
     fun resume() {
         if (!isRunning) {
             isRunning = true
-            handler.post(gameLoopRunnable)
         }
         isPaused = false
+        
+        // Restart the game loop immediately
+        handler.removeCallbacks(gameLoopRunnable)
+        handler.post(gameLoopRunnable)
+        
+        // Force an update to ensure pieces move immediately
+        update()
         invalidate()
     }
 } 

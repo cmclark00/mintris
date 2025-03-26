@@ -31,53 +31,80 @@
             android:layout_height="match_parent"
             android:background="@drawable/glow_border" />
     </FrameLayout>
+    
+    <!-- Title Screen -->
+    <com.mintris.game.TitleScreen
+        android:id="@+id/titleScreen"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- HUD Container - Score, Level, Lines -->
     <LinearLayout
-        android:id="@+id/hudContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/scoreText"
+        android:id="@+id/gameControlsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        
+        <LinearLayout
+            android:id="@+id/hudContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="24sp"
-            android:fontFamily="sans-serif-light"
-            tools:text="Score: 0" />
+            android:layout_margin="16dp"
+            android:layout_gravity="end"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/currentLevelText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="24sp"
-            android:fontFamily="sans-serif-light"
-            tools:text="Level: 1" />
+            <TextView
+                android:id="@+id/scoreText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-light"
+                tools:text="Score: 0" />
 
-        <TextView
-            android:id="@+id/linesText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="24sp"
-            android:fontFamily="sans-serif-light"
-            tools:text="Lines: 0" />
+            <TextView
+                android:id="@+id/currentLevelText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-light"
+                tools:text="Level: 1" />
+
+            <TextView
+                android:id="@+id/linesText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-light"
+                tools:text="Lines: 0" />
+        </LinearLayout>
+
+        <!-- Next Piece Preview -->
+        <com.mintris.game.NextPieceView
+            android:id="@+id/nextPieceView"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_margin="16dp"
+            android:layout_gravity="end" />
+            
+        <!-- Settings button -->
+        <ImageButton
+            android:id="@+id/pauseButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="start"
+            android:layout_margin="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/settings"
+            android:padding="12dp"
+            android:src="@drawable/ic_pause" />
     </LinearLayout>
-
-    <!-- Next Piece Preview -->
-    <com.mintris.game.NextPieceView
-        android:id="@+id/nextPieceView"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_margin="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hudContainer" />
 
     <!-- Game Over overlay -->
     <LinearLayout
