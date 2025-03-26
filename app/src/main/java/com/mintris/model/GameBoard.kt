@@ -281,20 +281,15 @@ class GameBoard(
      * Find lines that should be cleared and store them
      */
     private fun findLinesToClear() {
-        // Clear existing lines before finding new ones
+        // Clear existing lines
         linesToClear.clear()
         
+        // Quick scan for completed lines
         for (y in 0 until height) {
-            // Check if line is full
-            var lineFull = true
-            for (x in 0 until width) {
-                if (!grid[y][x]) {
-                    lineFull = false
-                    break
-                }
-            }
+            val row = grid[y]
             
-            if (lineFull) {
+            // Check if line is full - use all() for better performance
+            if (row.all { it }) {
                 linesToClear.add(y)
             }
         }
@@ -322,28 +317,32 @@ class GameBoard(
         if (linesToClear.isNotEmpty()) {
             val clearedLines = linesToClear.size
             
-            // Get the highest line that needs to be cleared
-            val highestLine = linesToClear.minOrNull() ?: return
+            // Much faster approach: shift rows in-place without creating temporary arrays
+            // Pre-compute all row movements to minimize array operations
+            val rowMoves = IntArray(height) { -1 } // Where each row should move to
+            var shiftAmount = 0
             
-            // Create a temporary grid to store the new state
-            val newGrid = Array(height) { BooleanArray(width) { false } }
-            
-            // Copy non-cleared lines to their new positions
-            var newY = height - 1
+            // Calculate how much to shift each row
             for (y in height - 1 downTo 0) {
-                if (y !in linesToClear) {
-                    for (x in 0 until width) {
-                        newGrid[newY][x] = grid[y][x]
-                    }
-                    newY--
+                if (y in linesToClear) {
+                    shiftAmount++
+                } else if (shiftAmount > 0) {
+                    rowMoves[y] = y + shiftAmount
                 }
             }
             
-            // Update the grid with the new state
-            for (y in 0 until height) {
-                for (x in 0 until width) {
-                    grid[y][x] = newGrid[y][x]
+            // Apply row shifts in a single pass, bottom to top
+            for (y in height - 1 downTo 0) {
+                val targetY = rowMoves[y]
+                if (targetY != -1 && targetY < height) {
+                    // Shift this row down
+                    System.arraycopy(grid[y], 0, grid[targetY], 0, width)
                 }
+            }
+            
+            // Clear top rows (faster than creating a new array)
+            for (y in 0 until clearedLines) {
+                java.util.Arrays.fill(grid[y], false)
             }
             
             // Calculate base score (NES scoring system)
@@ -427,7 +426,7 @@ class GameBoard(
             // Update game speed based on level (NES formula)
             dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
             
-            // Reset animation state and clear lines
+            // Reset animation state immediately
             isLineClearAnimationInProgress = false
             linesToClear.clear()
             

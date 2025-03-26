@@ -90,16 +90,8 @@ class GameView @JvmOverloads constructor(
         maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.OUTER)
     }
     
-    private val lineClearPaint = Paint().apply {
-        color = Color.WHITE
-        alpha = 255
-        isAntiAlias = true
-    }
-    
-    // Animation
-    private var lineClearAnimator: ValueAnimator? = null
-    private var lineClearProgress = 0f
-    private val lineClearDuration = 100L // milliseconds
+    // Pre-allocate paint objects to avoid GC
+    private val tmpPaint = Paint()
     
     // Calculate block size based on view dimensions and board size
     private var blockSize = 0f
@@ -147,7 +139,7 @@ class GameView @JvmOverloads constructor(
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { onPieceLock?.invoke() }
         
-        // Enable hardware acceleration
+        // Force hardware acceleration - This is critical for performance
         setLayerType(LAYER_TYPE_HARDWARE, null)
         
         // Set better frame rate using modern APIs
@@ -185,7 +177,6 @@ class GameView @JvmOverloads constructor(
     fun pause() {
         isPaused = true
         handler.removeCallbacks(gameLoopRunnable)
-        lineClearAnimator?.cancel()
         invalidate()
     }
     
@@ -198,7 +189,6 @@ class GameView @JvmOverloads constructor(
         gameBoard.reset()
         gameBoard.startGame()  // Add this line to ensure a new piece is spawned
         handler.removeCallbacks(gameLoopRunnable)
-        lineClearAnimator?.cancel()
         invalidate()
     }
     
@@ -216,55 +206,31 @@ class GameView @JvmOverloads constructor(
         // Move the current tetromino down automatically
         gameBoard.moveDown()
         
-        // Check if lines need to be cleared and start animation if needed
+        // Check if lines need to be cleared
         if (gameBoard.linesToClear.isNotEmpty()) {
             // Trigger line clear callback for vibration
             onLineClear?.invoke(gameBoard.linesToClear.size)
             
-            // Start line clearing animation immediately
-            startLineClearAnimation()
-        }
-        
-        // Update UI with current game state
-        onGameStateChanged?.invoke(gameBoard.score, gameBoard.level, gameBoard.lines)
-    }
-    
-    /**
-     * Start the line clearing animation
-     */
-    private fun startLineClearAnimation() {
-        // Cancel any existing animation
-        lineClearAnimator?.cancel()
-        
-        // Reset progress
-        lineClearProgress = 0f
-        
-        // Create and start new animation immediately
-        lineClearAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = lineClearDuration
-            interpolator = LinearInterpolator()
-            
-            addUpdateListener { animator ->
-                lineClearProgress = animator.animatedValue as Float
-                invalidate()
-            }
-            
-            addListener(object : android.animation.AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: android.animation.Animator) {
-                    // When animation completes, actually clear the lines
-                    gameBoard.clearLinesFromGrid()
+            // Trigger line clearing on a background thread to prevent UI freezes
+            Thread {
+                // Process the line clearing off the UI thread
+                gameBoard.clearLinesFromGrid()
+                
+                // Then update UI on the main thread
+                handler.post {
                     invalidate()
                 }
-            })
-            
-            start()
+            }.start()
+        } else {
+            // Update UI with current game state
+            onGameStateChanged?.invoke(gameBoard.score, gameBoard.level, gameBoard.lines)
         }
     }
     
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         
-        // Enable hardware acceleration
+        // Force hardware acceleration - Critical for performance
         setLayerType(LAYER_TYPE_HARDWARE, null)
         
         // Update gesture exclusion rect for edge-to-edge rendering
@@ -295,6 +261,18 @@ class GameView @JvmOverloads constructor(
     }
     
     override fun onDraw(canvas: Canvas) {
+        // Skip drawing if paused or game over - faster return
+        if (isPaused || gameBoard.isGameOver) {
+            super.onDraw(canvas)
+            return
+        }
+        
+        // Set hardware layer type during draw for better performance
+        val wasHardwareAccelerated = isHardwareAccelerated
+        if (!wasHardwareAccelerated) {
+            setLayerType(LAYER_TYPE_HARDWARE, null)
+        }
+        
         super.onDraw(canvas)
         
         // Draw background (already black from theme)
@@ -305,14 +283,8 @@ class GameView @JvmOverloads constructor(
         // Draw grid (very subtle)
         drawGrid(canvas)
         
-        // Check if line clear animation is in progress
-        if (gameBoard.isLineClearAnimationInProgress) {
-            // Draw the line clearing animation
-            drawLineClearAnimation(canvas)
-        } else {
-            // Draw locked pieces
-            drawLockedBlocks(canvas)
-        }
+        // Draw locked pieces
+        drawLockedBlocks(canvas)
         
         if (!gameBoard.isGameOver && isRunning) {
             // Draw ghost piece (landing preview)
@@ -320,49 +292,6 @@ class GameView @JvmOverloads constructor(
             
             // Draw active piece
             drawActivePiece(canvas)
-        }
-    }
-    
-    /**
-     * Draw the line clearing animation
-     */
-    private fun drawLineClearAnimation(canvas: Canvas) {
-        // Draw non-clearing blocks
-        for (y in 0 until gameBoard.height) {
-            if (gameBoard.linesToClear.contains(y)) continue
-            
-            for (x in 0 until gameBoard.width) {
-                if (gameBoard.isOccupied(x, y)) {
-                    drawBlock(canvas, x, y, false)
-                }
-            }
-        }
-        
-        // Draw all clearing lines with a single animation effect
-        for (lineY in gameBoard.linesToClear) {
-            for (x in 0 until gameBoard.width) {
-                // Animation effects for all lines simultaneously
-                val brightness = 255 - (lineClearProgress * 150).toInt() // Reduced from 200 for smoother fade
-                val scale = 1.0f - lineClearProgress * 0.3f // Reduced from 0.5f for subtler scaling
-                
-                // Set the paint for the clear animation
-                lineClearPaint.color = Color.WHITE
-                lineClearPaint.alpha = brightness.coerceIn(0, 255)
-                
-                // Calculate block position with scaling
-                val left = boardLeft + x * blockSize + (blockSize * (1 - scale) / 2)
-                val top = boardTop + lineY * blockSize + (blockSize * (1 - scale) / 2)
-                val right = left + blockSize * scale
-                val bottom = top + blockSize * scale
-                
-                // Draw the shrinking, fading block
-                val rect = RectF(left, top, right, bottom)
-                canvas.drawRect(rect, lineClearPaint)
-                
-                // Add a more subtle glow effect
-                lineClearPaint.setShadowLayer(8f * (1f - lineClearProgress), 0f, 0f, Color.WHITE)
-                canvas.drawRect(rect, lineClearPaint)
-            }
         }
     }
     
@@ -675,4 +604,4 @@ class GameView @JvmOverloads constructor(
         update()
         invalidate()
     }
-} 
+}
