@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.BlurMaskFilter
 import android.util.AttributeSet
 import android.view.View
 import kotlin.math.min
@@ -28,10 +29,10 @@ class NextPieceView @JvmOverloads constructor(
     
     private val glowPaint = Paint().apply {
         color = Color.WHITE
-        alpha = 80
+        alpha = 30
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 2f
+        strokeWidth = 1.5f
     }
     
     /**
@@ -60,6 +61,20 @@ class NextPieceView @JvmOverloads constructor(
                 val previewLeft = (canvas.width - width * previewBlockSize) / 2
                 val previewTop = (canvas.height - height * previewBlockSize) / 2
                 
+                // Draw subtle background glow
+                val glowPaint = Paint().apply {
+                    color = Color.WHITE
+                    alpha = 10
+                    maskFilter = BlurMaskFilter(previewBlockSize * 0.5f, BlurMaskFilter.Blur.OUTER)
+                }
+                canvas.drawRect(
+                    previewLeft - previewBlockSize,
+                    previewTop - previewBlockSize,
+                    previewLeft + width * previewBlockSize + previewBlockSize,
+                    previewTop + height * previewBlockSize + previewBlockSize,
+                    glowPaint
+                )
+                
                 for (y in 0 until height) {
                     for (x in 0 until width) {
                         if (piece.isBlockAt(x, y)) {
@@ -68,9 +83,11 @@ class NextPieceView @JvmOverloads constructor(
                             val right = left + previewBlockSize
                             val bottom = top + previewBlockSize
                             
+                            // Draw block with subtle glow
                             val rect = RectF(left + 1, top + 1, right - 1, bottom - 1)
                             canvas.drawRect(rect, blockPaint)
                             
+                            // Draw subtle border glow
                             val glowRect = RectF(left, top, right, bottom)
                             canvas.drawRect(glowRect, glowPaint)
                         }

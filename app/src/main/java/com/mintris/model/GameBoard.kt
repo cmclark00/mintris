@@ -48,6 +48,7 @@ class GameBoard(
     // Callbacks for game events
     var onPieceMove: (() -> Unit)? = null
     var onPieceLock: (() -> Unit)? = null
+    var onNextPieceChanged: (() -> Unit)? = null
     
     init {
         spawnNextPiece()
@@ -66,6 +67,7 @@ class GameBoard(
         
         // Take the next piece from the bag
         nextPiece = Tetromino(bag.removeFirst())
+        onNextPieceChanged?.invoke()
     }
     
     /**
@@ -97,6 +99,11 @@ class GameBoard(
      * Get the currently held piece
      */
     fun getHoldPiece(): Tetromino? = holdPiece
+    
+    /**
+     * Get the next piece that will be spawned
+     */
+    fun getNextPiece(): Tetromino? = nextPiece
     
     /**
      * Spawns the current tetromino at the top of the board
@@ -476,11 +483,6 @@ class GameBoard(
     fun getCurrentPiece(): Tetromino? = currentPiece
     
     /**
-     * Get the next tetromino
-     */
-    fun getNextPiece(): Tetromino? = nextPiece
-    
-    /**
      * Check if a cell in the grid is occupied
      */
     fun isOccupied(x: Int, y: Int): Boolean {
@@ -489,6 +491,25 @@ class GameBoard(
         } else {
             false
         }
+    }
+    
+    /**
+     * Update the current level and adjust game parameters
+     */
+    fun updateLevel(newLevel: Int) {
+        level = newLevel.coerceIn(1, 20)
+        // Update game speed based on level (NES formula)
+        dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
+    }
+    
+    /**
+     * Start a new game
+     */
+    fun startGame() {
+        reset()
+        // Initialize pieces
+        spawnNextPiece()
+        spawnPiece()
     }
     
     /**
@@ -504,10 +525,9 @@ class GameBoard(
         
         // Reset game state
         score = 0
-        level = 1
         lines = 0
         isGameOver = false
-        dropInterval = 1000L
+        dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
         
         // Reset scoring state
         combo = 0
@@ -520,9 +540,9 @@ class GameBoard(
         canHold = true
         bag.clear()
         
-        // Initialize pieces
-        spawnNextPiece()
-        spawnPiece()
+        // Clear current and next pieces
+        currentPiece = null
+        nextPiece = null
     }
     
     /**

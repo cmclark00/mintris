@@ -16,58 +16,43 @@ import com.mintris.game.GameHaptics
 import com.mintris.game.GameView
 import com.mintris.game.NextPieceView
 import android.view.HapticFeedbackConstants
+import com.mintris.model.GameBoard
 
 class MainActivity : AppCompatActivity() {
     
     // UI components
     private lateinit var binding: ActivityMainBinding
     private lateinit var gameView: GameView
-    private lateinit var scoreText: TextView
-    private lateinit var levelText: TextView
-    private lateinit var linesText: TextView
-    private lateinit var gameOverContainer: LinearLayout
-    private lateinit var pauseContainer: LinearLayout
-    private lateinit var playAgainButton: Button
-    private lateinit var resumeButton: Button
-    private lateinit var settingsButton: Button
-    private lateinit var finalScoreText: TextView
-    private lateinit var nextPieceView: NextPieceView
-    private lateinit var levelDownButton: Button
-    private lateinit var levelUpButton: Button
-    private lateinit var selectedLevelText: TextView
     private lateinit var gameHaptics: GameHaptics
+    private lateinit var gameBoard: GameBoard
     
     // Game state
     private var isSoundEnabled = true
     private var selectedLevel = 1
-    private val maxLevel = 10
+    private val maxLevel = 20
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        // Initialize game haptics
+        // Initialize game components
+        gameBoard = GameBoard()
         gameHaptics = GameHaptics(this)
+        gameView = binding.gameView
         
         // Set up game view
-        gameView = binding.gameView
-        scoreText = binding.scoreText
-        levelText = binding.levelText
-        linesText = binding.linesText
-        gameOverContainer = binding.gameOverContainer
-        pauseContainer = binding.pauseContainer
-        playAgainButton = binding.playAgainButton
-        resumeButton = binding.resumeButton
-        settingsButton = binding.settingsButton
-        finalScoreText = binding.finalScoreText
-        nextPieceView = binding.nextPieceView
-        levelDownButton = binding.levelDownButton
-        levelUpButton = binding.levelUpButton
-        selectedLevelText = binding.selectedLevelText
+        gameView.setGameBoard(gameBoard)
+        gameView.setHaptics(gameHaptics)
         
-        // Connect the next piece view to the game view
-        nextPieceView.setGameView(gameView)
+        // Set up next piece preview
+        binding.nextPieceView.setGameView(gameView)
+        gameBoard.onNextPieceChanged = {
+            binding.nextPieceView.invalidate()
+        }
+        
+        // Start game immediately
+        startGame()
         
         // Set up callbacks
         gameView.onGameStateChanged = { score, level, lines ->
@@ -99,50 +84,57 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Set up button click listeners with haptic feedback
-        playAgainButton.setOnClickListener {
+        binding.playAgainButton.setOnClickListener {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             hideGameOver()
             gameView.reset()
-            setGameLevel(selectedLevel)
             gameView.start()
         }
         
-        resumeButton.setOnClickListener {
+        binding.resumeButton.setOnClickListener {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             hidePauseMenu()
             gameView.start()
         }
         
-        settingsButton.setOnClickListener {
+        binding.settingsButton.setOnClickListener {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             toggleSound()
         }
-        
-        // Set up level selector with haptic feedback
-        levelDownButton.setOnClickListener {
-            if (selectedLevel > 1) {
-                gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
-                selectedLevel--
+
+        // Set up pause menu buttons
+        binding.pauseStartButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            hidePauseMenu()
+            gameView.reset()
+            gameView.start()
+        }
+
+        binding.pauseRestartButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            hidePauseMenu()
+            gameView.reset()
+            gameView.start()
+        }
+
+        binding.pauseLevelUpButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            if (selectedLevel < maxLevel) {
+                selectedLevel++
                 updateLevelSelector()
             }
         }
-        
-        levelUpButton.setOnClickListener {
-            if (selectedLevel < maxLevel) {
-                gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
-                selectedLevel++
+
+        binding.pauseLevelDownButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            if (selectedLevel > 1) {
+                selectedLevel--
                 updateLevelSelector()
             }
         }
         
         // Initialize level selector
         updateLevelSelector()
-        
-        // Start game when clicking the screen initially
-        setupTouchToStart()
-        
-        // Start with the game paused
-        gameView.pause()
         
         // Enable edge-to-edge display
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -151,44 +143,23 @@ class MainActivity : AppCompatActivity() {
     }
     
     /**
-     * Set up touch-to-start behavior for initial screen
-     */
-    private fun setupTouchToStart() {
-        val touchToStart = View.OnClickListener {
-            if (gameView.isGameOver()) {
-                hideGameOver()
-                gameView.reset()
-                gameView.start()
-            } else if (pauseContainer.visibility == View.VISIBLE) {
-                hidePauseMenu()
-                gameView.start()
-            } else {
-                gameView.start()
-            }
-        }
-        
-        // Add the click listener to the game view
-        gameView.setOnClickListener(touchToStart)
-    }
-    
-    /**
      * Update UI with current game state
      */
     private fun updateUI(score: Int, level: Int, lines: Int) {
-        scoreText.text = score.toString()
-        levelText.text = level.toString()
-        linesText.text = lines.toString()
+        binding.scoreText.text = score.toString()
+        binding.currentLevelText.text = level.toString()
+        binding.linesText.text = lines.toString()
         
         // Force redraw of next piece preview
-        nextPieceView.invalidate()
+        binding.nextPieceView.invalidate()
     }
     
     /**
      * Show game over screen
      */
     private fun showGameOver(score: Int) {
-        finalScoreText.text = getString(R.string.score) + ": " + score
-        gameOverContainer.visibility = View.VISIBLE
+        binding.finalScoreText.text = getString(R.string.score) + ": " + score
+        binding.gameOverContainer.visibility = View.VISIBLE
         
         // Vibrate to indicate game over
         vibrate(VibrationEffect.EFFECT_DOUBLE_CLICK)
@@ -198,21 +169,23 @@ class MainActivity : AppCompatActivity() {
      * Hide game over screen
      */
     private fun hideGameOver() {
-        gameOverContainer.visibility = View.GONE
+        binding.gameOverContainer.visibility = View.GONE
     }
     
     /**
-     * Show pause menu
+     * Show settings menu
      */
     private fun showPauseMenu() {
-        pauseContainer.visibility = View.VISIBLE
+        binding.pauseContainer.visibility = View.VISIBLE
+        binding.pauseStartButton.visibility = View.VISIBLE
+        binding.resumeButton.visibility = View.GONE
     }
     
     /**
-     * Hide pause menu
+     * Hide settings menu
      */
     private fun hidePauseMenu() {
-        pauseContainer.visibility = View.GONE
+        binding.pauseContainer.visibility = View.GONE
     }
     
     /**
@@ -220,12 +193,20 @@ class MainActivity : AppCompatActivity() {
      */
     private fun toggleSound() {
         isSoundEnabled = !isSoundEnabled
-        settingsButton.text = getString(
+        binding.settingsButton.text = getString(
             if (isSoundEnabled) R.string.sound_on else R.string.sound_off
         )
         
         // Vibrate to provide feedback
         vibrate(VibrationEffect.EFFECT_CLICK)
+    }
+    
+    /**
+     * Update the level selector display
+     */
+    private fun updateLevelSelector() {
+        binding.pauseLevelText.text = selectedLevel.toString()
+        gameBoard.updateLevel(selectedLevel)
     }
     
     /**
@@ -236,24 +217,18 @@ class MainActivity : AppCompatActivity() {
         vibrator.vibrate(VibrationEffect.createPredefined(effectId))
     }
     
-    /**
-     * Update the level selector display
-     */
-    private fun updateLevelSelector() {
-        selectedLevelText.text = selectedLevel.toString()
+    private fun startGame() {
+        gameView.visibility = View.VISIBLE
+        gameBoard.startGame()
+        gameView.start()
+        hidePauseMenu()
     }
     
-    /**
-     * Set the game level
-     */
-    private fun setGameLevel(level: Int) {
-        gameView.gameBoard.level = level
-        gameView.gameBoard.lines = (level - 1) * 10
-        gameView.gameBoard.dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
-        
-        // Update UI
-        levelText.text = level.toString()
-        linesText.text = gameView.gameBoard.lines.toString()
+    private fun restartGame() {
+        gameBoard.reset()
+        gameView.visibility = View.VISIBLE
+        gameView.start()
+        showPauseMenu()
     }
     
     override fun onPause() {
@@ -261,23 +236,32 @@ class MainActivity : AppCompatActivity() {
         if (!gameView.isGameOver()) {
             gameView.pause()
             showPauseMenu()
+            binding.pauseStartButton.visibility = View.GONE
+            binding.resumeButton.visibility = View.VISIBLE
         }
     }
     
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (gameOverContainer.visibility == View.VISIBLE) {
+        if (binding.gameOverContainer.visibility == View.VISIBLE) {
             hideGameOver()
             gameView.reset()
             return
         }
         
-        if (pauseContainer.visibility == View.GONE) {
+        if (binding.pauseContainer.visibility == View.GONE) {
             gameView.pause()
             showPauseMenu()
+            binding.pauseStartButton.visibility = View.GONE
+            binding.resumeButton.visibility = View.VISIBLE
         } else {
             hidePauseMenu()
             gameView.start()
         }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        gameView.resume()
     }
 } 

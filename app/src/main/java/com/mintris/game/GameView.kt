@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.BlurMaskFilter
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -33,11 +34,15 @@ class GameView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     // Game board model
-    val gameBoard = GameBoard()
+    private var gameBoard = GameBoard()
+    private var gameHaptics: GameHaptics? = null
     
     // Game state
     private var isRunning = false
     private var isPaused = false
+    
+    // Callbacks
+    var onNextPieceChanged: (() -> Unit)? = null
     
     // Rendering
     private val blockPaint = Paint().apply {
@@ -53,7 +58,7 @@ class GameView @JvmOverloads constructor(
     
     private val gridPaint = Paint().apply {
         color = Color.parseColor("#222222")  // Very dark gray
-        alpha = 40
+        alpha = 20  // Reduced from 40 to be more subtle
         isAntiAlias = true
         strokeWidth = 1f
         style = Paint.Style.STROKE
@@ -61,19 +66,28 @@ class GameView @JvmOverloads constructor(
     
     private val glowPaint = Paint().apply {
         color = Color.WHITE
-        alpha = 80
+        alpha = 40  // Reduced from 80 for more subtlety
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 2f
+        strokeWidth = 1.5f
+        maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.OUTER)
+    }
+    
+    private val blockGlowPaint = Paint().apply {
+        color = Color.WHITE
+        alpha = 60
+        isAntiAlias = true
+        style = Paint.Style.FILL
+        maskFilter = BlurMaskFilter(12f, BlurMaskFilter.Blur.OUTER)
     }
     
     private val borderGlowPaint = Paint().apply {
-        color = Color.CYAN
-        alpha = 120
+        color = Color.WHITE
+        alpha = 60
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 4f
-        setShadowLayer(10f, 0f, 0f, Color.CYAN)
+        strokeWidth = 2f
+        maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.OUTER)
     }
     
     private val lineClearPaint = Paint().apply {
@@ -85,7 +99,7 @@ class GameView @JvmOverloads constructor(
     // Animation
     private var lineClearAnimator: ValueAnimator? = null
     private var lineClearProgress = 0f
-    private val lineClearDuration = 150L // milliseconds
+    private val lineClearDuration = 100L // milliseconds
     
     // Calculate block size based on view dimensions and board size
     private var blockSize = 0f
@@ -111,10 +125,12 @@ class GameView @JvmOverloads constructor(
     private var startY = 0f
     private var lastTapTime = 0L
     private var lastRotationTime = 0L
+    private var lastMoveTime = 0L
     private var minSwipeVelocity = 800  // Minimum velocity for swipe to be considered a hard drop
     private val maxTapMovement = 20f    // Maximum movement allowed for a tap (in pixels)
     private val minTapTime = 100L       // Minimum time for a tap (in milliseconds)
     private val rotationCooldown = 150L // Minimum time between rotations (in milliseconds)
+    private val moveCooldown = 50L      // Minimum time between move haptics (in milliseconds)
     
     // Callback for game events
     var onGameStateChanged: ((score: Int, level: Int, lines: Int) -> Unit)? = null
@@ -156,15 +172,11 @@ class GameView @JvmOverloads constructor(
      * Start the game
      */
     fun start() {
-        if (isPaused || !isRunning) {
-            isPaused = false
-            if (!isRunning) {
-                isRunning = true
-                gameBoard.reset()
-            }
-            handler.post(gameLoopRunnable)
-            invalidate()
-        }
+        isPaused = false
+        isRunning = true
+        gameBoard.startGame()  // Add this line to ensure a new piece is spawned
+        handler.post(gameLoopRunnable)
+        invalidate()
     }
     
     /**
@@ -184,6 +196,7 @@ class GameView @JvmOverloads constructor(
         isRunning = false
         isPaused = true
         gameBoard.reset()
+        gameBoard.startGame()  // Add this line to ensure a new piece is spawned
         handler.removeCallbacks(gameLoopRunnable)
         lineClearAnimator?.cancel()
         invalidate()
@@ -204,14 +217,12 @@ class GameView @JvmOverloads constructor(
         gameBoard.moveDown()
         
         // Check if lines need to be cleared and start animation if needed
-        if (gameBoard.linesToClear.isNotEmpty() && gameBoard.isLineClearAnimationInProgress) {
+        if (gameBoard.linesToClear.isNotEmpty()) {
             // Trigger line clear callback for vibration
             onLineClear?.invoke(gameBoard.linesToClear.size)
             
-            // Start line clearing animation if not already running
-            if (lineClearAnimator == null || !lineClearAnimator!!.isRunning) {
-                startLineClearAnimation()
-            }
+            // Start line clearing animation immediately
+            startLineClearAnimation()
         }
         
         // Update UI with current game state
@@ -222,8 +233,13 @@ class GameView @JvmOverloads constructor(
      * Start the line clearing animation
      */
     private fun startLineClearAnimation() {
+        // Cancel any existing animation
         lineClearAnimator?.cancel()
         
+        // Reset progress
+        lineClearProgress = 0f
+        
+        // Create and start new animation immediately
         lineClearAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = lineClearDuration
             interpolator = LinearInterpolator()
@@ -273,9 +289,9 @@ class GameView @JvmOverloads constructor(
             height.toFloat() / verticalBlocks
         )
         
-        // Center the board within the view
+        // Center horizontally and align to bottom
         boardLeft = (width - (blockSize * horizontalBlocks)) / 2
-        boardTop = (height - (blockSize * verticalBlocks)) / 2
+        boardTop = height - (blockSize * verticalBlocks)  // Align to bottom
     }
     
     override fun onDraw(canvas: Canvas) {
@@ -313,12 +329,11 @@ class GameView @JvmOverloads constructor(
     private fun drawLineClearAnimation(canvas: Canvas) {
         // Draw non-clearing blocks
         for (y in 0 until gameBoard.height) {
-            // Skip lines that are being cleared
             if (gameBoard.linesToClear.contains(y)) continue
             
             for (x in 0 until gameBoard.width) {
                 if (gameBoard.isOccupied(x, y)) {
-                    drawBlock(canvas, x, y, blockPaint)
+                    drawBlock(canvas, x, y, false)
                 }
             }
         }
@@ -327,8 +342,8 @@ class GameView @JvmOverloads constructor(
         for (lineY in gameBoard.linesToClear) {
             for (x in 0 until gameBoard.width) {
                 // Animation effects for all lines simultaneously
-                val brightness = 255 - (lineClearProgress * 200).toInt()
-                val scale = 1.0f - lineClearProgress * 0.5f
+                val brightness = 255 - (lineClearProgress * 150).toInt() // Reduced from 200 for smoother fade
+                val scale = 1.0f - lineClearProgress * 0.3f // Reduced from 0.5f for subtler scaling
                 
                 // Set the paint for the clear animation
                 lineClearPaint.color = Color.WHITE
@@ -344,8 +359,8 @@ class GameView @JvmOverloads constructor(
                 val rect = RectF(left, top, right, bottom)
                 canvas.drawRect(rect, lineClearPaint)
                 
-                // Add a glow effect
-                lineClearPaint.setShadowLayer(10f * (1f - lineClearProgress), 0f, 0f, Color.WHITE)
+                // Add a more subtle glow effect
+                lineClearPaint.setShadowLayer(8f * (1f - lineClearProgress), 0f, 0f, Color.WHITE)
                 canvas.drawRect(rect, lineClearPaint)
             }
         }
@@ -396,7 +411,7 @@ class GameView @JvmOverloads constructor(
         for (y in 0 until gameBoard.height) {
             for (x in 0 until gameBoard.width) {
                 if (gameBoard.isOccupied(x, y)) {
-                    drawBlock(canvas, x, y, blockPaint)
+                    drawBlock(canvas, x, y, false)
                 }
             }
         }
@@ -417,7 +432,7 @@ class GameView @JvmOverloads constructor(
                     // Only draw if within bounds and visible on screen
                     if (boardY >= 0 && boardY < gameBoard.height && 
                         boardX >= 0 && boardX < gameBoard.width) {
-                        drawBlock(canvas, boardX, boardY, blockPaint)
+                        drawBlock(canvas, boardX, boardY, false)
                     }
                 }
             }
@@ -440,7 +455,7 @@ class GameView @JvmOverloads constructor(
                     // Only draw if within bounds and visible on screen
                     if (boardY >= 0 && boardY < gameBoard.height && 
                         boardX >= 0 && boardX < gameBoard.width) {
-                        drawBlock(canvas, boardX, boardY, ghostBlockPaint)
+                        drawBlock(canvas, boardX, boardY, true)
                     }
                 }
             }
@@ -450,29 +465,26 @@ class GameView @JvmOverloads constructor(
     /**
      * Draw a single tetris block at the given grid position
      */
-    private fun drawBlock(canvas: Canvas, x: Int, y: Int, paint: Paint) {
+    private fun drawBlock(canvas: Canvas, x: Int, y: Int, isGhost: Boolean) {
         val left = boardLeft + x * blockSize
         val top = boardTop + y * blockSize
         val right = left + blockSize
         val bottom = top + blockSize
         
-        // Draw block with a slight inset to create separation
-        val rect = RectF(left + 1, top + 1, right - 1, bottom - 1)
-        canvas.drawRect(rect, paint)
+        // Draw outer glow
+        blockGlowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
+        canvas.drawRect(left - 2f, top - 2f, right + 2f, bottom + 2f, blockGlowPaint)
         
-        // Draw enhanced glow effect
-        val glowRect = RectF(left, top, right, bottom)
-        val blockGlowPaint = Paint(glowPaint)
-        if (paint == blockPaint) {
-            val piece = gameBoard.getCurrentPiece()
-            if (piece != null && isPositionInPiece(x, y, piece)) {
-                // Set glow color based on piece type
-                blockGlowPaint.color = getTetrominoColor(piece.type)
-                blockGlowPaint.alpha = 150
-                blockGlowPaint.setShadowLayer(3f, 0f, 0f, blockGlowPaint.color)
-            }
+        // Draw block
+        blockPaint.apply {
+            color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
+            alpha = if (isGhost) 30 else 255
         }
-        canvas.drawRect(glowRect, blockGlowPaint)
+        canvas.drawRect(left, top, right, bottom, blockPaint)
+        
+        // Draw inner glow
+        glowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
+        canvas.drawRect(left + 1f, top + 1f, right - 1f, bottom - 1f, glowPaint)
     }
     
     /**
@@ -524,7 +536,7 @@ class GameView @JvmOverloads constructor(
                 
                 // Check for double tap (rotate)
                 val currentTime = System.currentTimeMillis()
-                if (currentTime - lastTapTime < 250) {
+                if (currentTime - lastTapTime < 200) {  // Reduced from 250ms for faster response
                     // Double tap detected, rotate the piece
                     if (currentTime - lastRotationTime >= rotationCooldown) {
                         gameBoard.rotate()
@@ -538,22 +550,33 @@ class GameView @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 val deltaX = event.x - lastTouchX
                 val deltaY = event.y - lastTouchY
+                val currentTime = System.currentTimeMillis()
                 
-                // Horizontal movement (left/right)
-                if (abs(deltaX) > blockSize) {
+                // Horizontal movement (left/right) with reduced threshold
+                if (abs(deltaX) > blockSize * 0.5f) {  // Reduced from 1.0f for more responsive movement
                     if (deltaX > 0) {
                         gameBoard.moveRight()
                     } else {
                         gameBoard.moveLeft()
                     }
                     lastTouchX = event.x
+                    // Add haptic feedback for movement with cooldown
+                    if (currentTime - lastMoveTime >= moveCooldown) {
+                        gameHaptics?.vibrateForPieceMove()
+                        lastMoveTime = currentTime
+                    }
                     invalidate()
                 }
                 
-                // Vertical movement (soft drop)
-                if (deltaY > blockSize / 2) {
+                // Vertical movement (soft drop) with reduced threshold
+                if (deltaY > blockSize * 0.25f) {  // Reduced from 0.5f for more responsive soft drop
                     gameBoard.moveDown()
                     lastTouchY = event.y
+                    // Add haptic feedback for movement with cooldown
+                    if (currentTime - lastMoveTime >= moveCooldown) {
+                        gameHaptics?.vibrateForPieceMove()
+                        lastMoveTime = currentTime
+                    }
                     invalidate()
                 }
             }
@@ -565,7 +588,7 @@ class GameView @JvmOverloads constructor(
                 val deltaX = event.x - startX
                 
                 // If the movement was fast and downward, treat as hard drop
-                if (moveTime > 0 && deltaY > blockSize && (deltaY / moveTime) * 1000 > minSwipeVelocity) {
+                if (moveTime > 0 && deltaY > blockSize * 0.5f && (deltaY / moveTime) * 1000 > minSwipeVelocity) {
                     gameBoard.hardDrop()
                     invalidate()
                 } else if (moveTime < minTapTime && 
@@ -606,9 +629,11 @@ class GameView @JvmOverloads constructor(
     fun isGameOver(): Boolean = gameBoard.isGameOver
     
     /**
-     * Get the next tetromino
+     * Get the next piece that will be spawned
      */
-    fun getNextPiece() = gameBoard.getNextPiece()
+    fun getNextPiece(): Tetromino? {
+        return gameBoard.getNextPiece()
+    }
     
     /**
      * Clean up resources when view is detached
@@ -616,5 +641,32 @@ class GameView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         handler.removeCallbacks(gameLoopRunnable)
+    }
+    
+    /**
+     * Set the game board for this view
+     */
+    fun setGameBoard(board: GameBoard) {
+        gameBoard = board
+        invalidate()
+    }
+    
+    /**
+     * Set the haptics handler for this view
+     */
+    fun setHaptics(haptics: GameHaptics) {
+        gameHaptics = haptics
+    }
+    
+    /**
+     * Resume the game
+     */
+    fun resume() {
+        if (!isRunning) {
+            isRunning = true
+            handler.post(gameLoopRunnable)
+        }
+        isPaused = false
+        invalidate()
     }
 } 
