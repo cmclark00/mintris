@@ -17,6 +17,7 @@ import com.mintris.game.GameView
 import com.mintris.game.NextPieceView
 import android.view.HapticFeedbackConstants
 import com.mintris.model.GameBoard
+import com.mintris.audio.GameMusic
 
 class MainActivity : AppCompatActivity() {
     
@@ -25,9 +26,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameView: GameView
     private lateinit var gameHaptics: GameHaptics
     private lateinit var gameBoard: GameBoard
+    private lateinit var gameMusic: GameMusic
     
     // Game state
     private var isSoundEnabled = true
+    private var isMusicEnabled = true
     private var selectedLevel = 1
     private val maxLevel = 20
     
@@ -40,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         gameBoard = GameBoard()
         gameHaptics = GameHaptics(this)
         gameView = binding.gameView
+        gameMusic = GameMusic(this)
         
         // Set up game view
         gameView.setGameBoard(gameBoard)
@@ -49,6 +53,13 @@ class MainActivity : AppCompatActivity() {
         binding.nextPieceView.setGameView(gameView)
         gameBoard.onNextPieceChanged = {
             binding.nextPieceView.invalidate()
+        }
+        
+        // Set up music toggle
+        binding.musicToggle.setOnClickListener {
+            isMusicEnabled = !isMusicEnabled
+            gameMusic.setEnabled(isMusicEnabled)
+            updateMusicToggleUI()
         }
         
         // Start game immediately
@@ -94,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         binding.resumeButton.setOnClickListener {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             hidePauseMenu()
-            gameView.start()
+            resumeGame()
         }
         
         binding.settingsButton.setOnClickListener {
@@ -217,11 +228,19 @@ class MainActivity : AppCompatActivity() {
         vibrator.vibrate(VibrationEffect.createPredefined(effectId))
     }
     
+    private fun updateMusicToggleUI() {
+        binding.musicToggle.setImageResource(
+            if (isMusicEnabled) R.drawable.ic_volume_up
+            else R.drawable.ic_volume_off
+        )
+    }
+    
     private fun startGame() {
-        gameView.visibility = View.VISIBLE
-        gameBoard.startGame()
         gameView.start()
-        hidePauseMenu()
+        gameMusic.setEnabled(isMusicEnabled)  // Explicitly set enabled state
+        if (isMusicEnabled) {
+            gameMusic.start()
+        }
     }
     
     private fun restartGame() {
@@ -231,10 +250,22 @@ class MainActivity : AppCompatActivity() {
         showPauseMenu()
     }
     
+    private fun pauseGame() {
+        gameView.pause()
+        gameMusic.pause()
+    }
+    
+    private fun resumeGame() {
+        gameView.resume()
+        if (isMusicEnabled) {
+            gameMusic.start()
+        }
+    }
+    
     override fun onPause() {
         super.onPause()
         if (!gameView.isGameOver()) {
-            gameView.pause()
+            pauseGame()
             showPauseMenu()
             binding.pauseStartButton.visibility = View.GONE
             binding.resumeButton.visibility = View.VISIBLE
@@ -256,12 +287,19 @@ class MainActivity : AppCompatActivity() {
             binding.resumeButton.visibility = View.VISIBLE
         } else {
             hidePauseMenu()
-            gameView.start()
+            resumeGame()
         }
     }
     
     override fun onResume() {
         super.onResume()
-        gameView.resume()
+        if (!gameView.isGameOver()) {
+            resumeGame()
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        gameMusic.release()
     }
 } 

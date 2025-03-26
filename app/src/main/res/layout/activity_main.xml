@@ -225,6 +225,19 @@
             android:text="@string/sound_on"
             android:textColor="@color/white"
             android:textSize="18sp" />
+
+        <ImageButton
+            android:id="@+id/musicToggle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/toggle_music"
+            android:padding="12dp"
+            android:src="@drawable/ic_volume_up"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/pauseStartButton"
+            app:layout_constraintTop_toTopOf="parent" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 
