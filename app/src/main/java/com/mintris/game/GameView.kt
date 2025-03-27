@@ -138,6 +138,15 @@ class GameView @JvmOverloads constructor(
         // Connect our callbacks to the GameBoard
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { onPieceLock?.invoke() }
+        gameBoard.onLineClear = { lineCount -> 
+            android.util.Log.d("GameView", "Received line clear from GameBoard: $lineCount lines")
+            try {
+                onLineClear?.invoke(lineCount)
+                android.util.Log.d("GameView", "Forwarded line clear callback")
+            } catch (e: Exception) {
+                android.util.Log.e("GameView", "Error forwarding line clear callback", e)
+            }
+        }
         
         // Force hardware acceleration - This is critical for performance
         setLayerType(LAYER_TYPE_HARDWARE, null)
@@ -560,6 +569,20 @@ class GameView @JvmOverloads constructor(
      */
     fun setGameBoard(board: GameBoard) {
         gameBoard = board
+        
+        // Reconnect callbacks to the new board
+        gameBoard.onPieceMove = { onPieceMove?.invoke() }
+        gameBoard.onPieceLock = { onPieceLock?.invoke() }
+        gameBoard.onLineClear = { lineCount -> 
+            android.util.Log.d("GameView", "Received line clear from GameBoard: $lineCount lines")
+            try {
+                onLineClear?.invoke(lineCount)
+                android.util.Log.d("GameView", "Forwarded line clear callback")
+            } catch (e: Exception) {
+                android.util.Log.e("GameView", "Error forwarding line clear callback", e)
+            }
+        }
+        
         invalidate()
     }
     

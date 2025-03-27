@@ -104,9 +104,18 @@ class MainActivity : AppCompatActivity() {
         }
         
         gameView.onLineClear = { lineCount ->
+            android.util.Log.d("MainActivity", "Received line clear callback: $lineCount lines")
             // Use enhanced haptic feedback for line clears
             if (isSoundEnabled) {
-                gameHaptics.vibrateForLineClear(lineCount)
+                android.util.Log.d("MainActivity", "Sound is enabled, triggering haptic feedback")
+                try {
+                    gameHaptics.vibrateForLineClear(lineCount)
+                    android.util.Log.d("MainActivity", "Haptic feedback triggered successfully")
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "Error triggering haptic feedback", e)
+                }
+            } else {
+                android.util.Log.d("MainActivity", "Sound is disabled, skipping haptic feedback")
             }
         }
         

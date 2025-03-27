@@ -49,6 +49,7 @@ class GameBoard(
     var onPieceMove: (() -> Unit)? = null
     var onPieceLock: (() -> Unit)? = null
     var onNextPieceChanged: (() -> Unit)? = null
+    var onLineClear: ((Int) -> Unit)? = null
     
     init {
         spawnNextPiece()
@@ -299,8 +300,21 @@ class GameBoard(
             java.util.Arrays.fill(grid[y], false)
         }
         
-        // If lines were cleared, calculate score in background
+        // If lines were cleared, calculate score in background and trigger callback
         if (shiftAmount > 0) {
+            android.util.Log.d("GameBoard", "Lines cleared: $shiftAmount")
+            // Trigger line clear callback on main thread
+            val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+            mainHandler.post {
+                android.util.Log.d("GameBoard", "Triggering onLineClear callback with $shiftAmount lines")
+                try {
+                    onLineClear?.invoke(shiftAmount)
+                    android.util.Log.d("GameBoard", "onLineClear callback completed successfully")
+                } catch (e: Exception) {
+                    android.util.Log.e("GameBoard", "Error in onLineClear callback", e)
+                }
+            }
+            
             Thread {
                 calculateScore(shiftAmount)
             }.start()
