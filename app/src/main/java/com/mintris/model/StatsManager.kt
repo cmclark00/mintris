@@ -157,6 +157,27 @@ class StatsManager(context: Context) {
     fun getSessionTriples(): Int = sessionTriples
     fun getSessionTetrises(): Int = sessionTetrises
     
+    fun resetStats() {
+        // Reset all lifetime stats
+        totalGames = 0
+        totalScore = 0
+        totalLines = 0
+        totalPieces = 0
+        totalTime = 0
+        maxLevel = 0
+        maxScore = 0
+        maxLines = 0
+        
+        // Reset line clear stats
+        totalSingles = 0
+        totalDoubles = 0
+        totalTriples = 0
+        totalTetrises = 0
+        
+        // Save the reset stats
+        saveStats()
+    }
+    
     companion object {
         private const val PREFS_NAME = "mintris_stats"
         private const val KEY_TOTAL_GAMES = "total_games"

@@ -3,6 +3,7 @@ package com.mintris
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.mintris.databinding.ActivityStatsBinding
 import com.mintris.model.StatsManager
@@ -25,7 +26,24 @@ class StatsActivity : AppCompatActivity() {
             finish()
         }
 
+        // Set up reset stats button
+        binding.resetStatsButton.setOnClickListener {
+            showResetConfirmationDialog()
+        }
+
         updateStats()
+    }
+
+    private fun showResetConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Reset Stats")
+            .setMessage("Are you sure you want to reset all your stats? This cannot be undone.")
+            .setPositiveButton("Reset") { _, _ ->
+                statsManager.resetStats()
+                updateStats()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun updateStats() {

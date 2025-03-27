@@ -143,5 +143,14 @@
             android:background="@color/transparent"
             android:layout_marginTop="16dp"/>
 
+        <Button
+            android:id="@+id/resetStatsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/reset_stats"
+            android:textColor="@color/white"
+            android:background="@color/transparent"
+            android:layout_marginTop="16dp"/>
+
     </LinearLayout>
 </ScrollView> 
