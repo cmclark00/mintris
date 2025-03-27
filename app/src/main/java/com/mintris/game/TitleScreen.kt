@@ -13,6 +13,9 @@ import android.util.Log
 import com.mintris.model.HighScoreManager
 import com.mintris.model.HighScore
 import kotlin.math.abs
+import androidx.core.graphics.withTranslation
+import androidx.core.graphics.withScale
+import androidx.core.graphics.withRotation
 
 class TitleScreen @JvmOverloads constructor(
     context: Context,
@@ -30,6 +33,7 @@ class TitleScreen @JvmOverloads constructor(
     private var width = 0
     private var height = 0
     private val tetrominosToAdd = mutableListOf<Tetromino>()
+    private val highScoreManager = HighScoreManager(context)  // Pre-allocate HighScoreManager
     
     // Touch handling variables
     private var startX = 0f
@@ -195,58 +199,31 @@ class TitleScreen @JvmOverloads constructor(
                     tetrominosToAdd.add(createRandomTetromino())
                 } else {
                     try {
-                        // Save canvas state before rotation
-                        canvas.save()
-                        
-                        // Translate to the tetromino's position
-                        canvas.translate(tetromino.x, tetromino.y)
-                        
-                        // Scale according to the tetromino's scale factor
-                        canvas.scale(tetromino.scale, tetromino.scale)
-                        
-                        // Rotate around the center of the tetromino
-                        val centerX = tetromino.shape.size * cellSize / 2
-                        val centerY = tetromino.shape.size * cellSize / 2
-                        canvas.rotate(tetromino.rotation.toFloat(), centerX, centerY)
-                        
                         // Draw the tetromino
-                        for (row in tetromino.shape.indices) {
-                            for (col in 0 until tetromino.shape[row].size) {
-                                if (tetromino.shape[row][col] == 1) {
-                                    // Draw larger glow effect
-                                    glowPaint.alpha = 30
-                                    canvas.drawRect(
-                                        col * cellSize - 8,
-                                        row * cellSize - 8,
-                                        (col + 1) * cellSize + 8,
-                                        (row + 1) * cellSize + 8,
-                                        glowPaint
-                                    )
+                        for (y in 0 until tetromino.shape.size) {
+                            for (x in 0 until tetromino.shape.size) {
+                                if (tetromino.shape[y][x] == 1) {
+                                    val left = x * cellSize
+                                    val top = y * cellSize
+                                    val right = left + cellSize
+                                    val bottom = top + cellSize
                                     
-                                    // Draw medium glow
-                                    glowPaint.alpha = 60
-                                    canvas.drawRect(
-                                        col * cellSize - 4,
-                                        row * cellSize - 4,
-                                        (col + 1) * cellSize + 4,
-                                        (row + 1) * cellSize + 4,
-                                        glowPaint
-                                    )
-                                    
-                                    // Draw main block
-                                    canvas.drawRect(
-                                        col * cellSize,
-                                        row * cellSize,
-                                        (col + 1) * cellSize,
-                                        (row + 1) * cellSize,
-                                        paint
-                                    )
+                                    // Draw block with glow effect
+                                    canvas.withTranslation(tetromino.x, tetromino.y) {
+                                        withScale(tetromino.scale, tetromino.scale) {
+                                            withRotation(tetromino.rotation.toFloat(), 
+                                                tetromino.shape.size * cellSize / 2,
+                                                tetromino.shape.size * cellSize / 2) {
+                                                // Draw glow
+                                                canvas.drawRect(left - 8f, top - 8f, right + 8f, bottom + 8f, glowPaint)
+                                                // Draw block
+                                                canvas.drawRect(left, top, right, bottom, paint)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                        
-                        // Restore canvas state
-                        canvas.restore()
                     } catch (e: Exception) {
                         Log.e("TitleScreen", "Error drawing tetromino", e)
                     }
@@ -260,8 +237,7 @@ class TitleScreen @JvmOverloads constructor(
             val titleY = height * 0.4f
             canvas.drawText("mintris", width / 2f, titleY, titlePaint)
             
-            // Draw high scores
-            val highScoreManager = HighScoreManager(context)
+            // Draw high scores using pre-allocated manager
             val highScores: List<HighScore> = highScoreManager.getHighScores()
             val highScoreY = height * 0.5f
             if (highScores.isNotEmpty()) {
