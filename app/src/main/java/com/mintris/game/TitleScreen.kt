@@ -116,7 +116,7 @@ class TitleScreen @JvmOverloads constructor(
         // "Touch to start" text settings
         promptPaint.apply {
             color = Color.WHITE
-            textSize = 40f
+            textSize = 50f
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
             isAntiAlias = true
