@@ -29,6 +29,7 @@ class GameBoard(
     // Game state
     var score = 0
     var level = 1
+    var startingLevel = 1  // Add this line to track the starting level
     var lines = 0
     var isGameOver = false
     var isHardDropInProgress = false  // Make public
@@ -439,7 +440,8 @@ class GameBoard(
         
         // Update lines cleared and level
         lines += clearedLines
-        level = (lines / 10) + 1
+        // Calculate level based on lines cleared, but ensure it's never below the starting level
+        level = Math.max((lines / 10) + 1, startingLevel)
         
         // Update game speed based on level (NES formula)
         dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
@@ -519,6 +521,7 @@ class GameBoard(
      */
     fun updateLevel(newLevel: Int) {
         level = newLevel.coerceIn(1, 20)
+        startingLevel = level  // Store the starting level
         // Update game speed based on level (NES formula)
         dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
     }
@@ -546,10 +549,10 @@ class GameBoard(
         
         // Reset game state
         score = 0
-        level = 1
+        level = startingLevel  // Use starting level instead of resetting to 1
         lines = 0
         isGameOver = false
-        dropInterval = 1000L  // Reset to level 1 speed
+        dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()  // Set speed based on current level
         
         // Reset scoring state
         combo = 0
