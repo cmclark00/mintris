@@ -1,29 +1,30 @@
 # Mintris
 
-A modern Tetris implementation for Android, featuring official Tetris rules, smooth animations, and responsive controls.
+A modern Tetris implementation for Android, featuring smooth animations, responsive controls, and a beautiful minimalist design.
 
 ## Features
 
 ### Core Gameplay
-- Official Tetris rules and mechanics
+- Classic Tetris mechanics
 - 7-bag randomizer for piece distribution
 - Hold piece functionality
 - Ghost piece preview
 - Hard drop and soft drop
-- Wall kick system for rotations
 - T-Spin detection and scoring
+- High score system with top 5 scores
 
 ### Modern Android Features
-- Optimized for Android 10+ (API 29+)
+- Optimized for Android 11+ (API 30+)
 - Hardware-accelerated rendering
 - High refresh rate support
-- Haptic feedback
+- Haptic feedback for piece movement and line clears
 - Dark theme support
 - Responsive touch controls
+- Edge-to-edge display support
 
 ### Scoring System
 
-The game features a comprehensive scoring system based on official Tetris rules:
+The game features a comprehensive scoring system:
 
 #### Base Scores
 - Single line: 40 points
@@ -36,6 +37,7 @@ The game features a comprehensive scoring system based on official Tetris rules:
 1. **Level Multiplier**
    - Score is multiplied by current level
    - Level increases every 10 lines cleared
+   - Maximum level is 20
 
 2. **Combo System**
    - Combo counter increases with each line clear
@@ -67,29 +69,26 @@ The game features a comprehensive scoring system based on official Tetris rules:
    - Double: 4x
    - Triple: 6x
 
-#### Example Score Calculation
-A back-to-back T-Spin Tetris with a 3x combo at level 2:
-```
-Base Score: 1200
-Level: 2
-Combo: 3x
-Back-to-Back: 1.5x
-T-Spin: 6x
-Final Score: 1200 * 2 * 3 * 1.5 * 6 = 64,800
-```
-
 ### Controls
 - Tap left/right to move piece
-- Tap up to rotate
-- Double tap to hard drop
-- Long press to hold piece
+- Tap up or double tap to rotate
 - Swipe down for soft drop
+- Fast swipe down for hard drop
+- Long press to hold piece
+
+### Visual Effects
+- Smooth piece movement animations
+- Pulsing border glow during line clears
+- Ghost piece preview
+- Block glow effects
+- Subtle grid lines
+- Animated title screen with falling pieces
 
 ## Technical Details
 
 ### Requirements
-- Android 10 (API 29) or higher
-- OpenGL ES 2.0 or higher
+- Android 11 (API 30) or higher
+- Hardware acceleration support
 - 2GB RAM minimum
 
 ### Performance Optimizations
@@ -97,18 +96,19 @@ Final Score: 1200 * 2 * 3 * 1.5 * 6 = 64,800
 - Efficient collision detection
 - Optimized grid operations
 - Smooth animations at 60fps
+- Background thread for score calculations
 
 ### Architecture
 - Written in Kotlin
 - Uses Android Canvas for rendering
-- Implements MVVM architecture
 - Follows Material Design guidelines
+- Implements high score persistence using SharedPreferences
 
 ## Building from Source
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/mintris.git
+git clone https://github.com/cmclark00/mintris.git
 ```
 
 2. Open the project in Android Studio
