@@ -371,6 +371,34 @@ class GameView @JvmOverloads constructor(
                 bottom + 4f,
                 outerGlowPaint
             )
+
+            // Add extra bright glow for side borders during line clear
+            val sideGlowPaint = Paint().apply {
+                color = Color.WHITE
+                style = Paint.Style.STROKE
+                strokeWidth = 8f + (24f * pulseAlpha)  // Thicker stroke for side borders
+                alpha = (255 * pulseAlpha).toInt()
+                isAntiAlias = true
+                maskFilter = BlurMaskFilter(64f * (1f + pulseAlpha), BlurMaskFilter.Blur.OUTER)  // Larger blur for side borders
+            }
+            
+            // Draw left border with extra glow
+            canvas.drawLine(
+                left + inset,
+                top + inset,
+                left + inset,
+                bottom - inset,
+                sideGlowPaint
+            )
+            
+            // Draw right border with extra glow
+            canvas.drawLine(
+                right - inset,
+                top + inset,
+                right - inset,
+                bottom - inset,
+                sideGlowPaint
+            )
         }
     }
     
