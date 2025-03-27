@@ -37,6 +37,7 @@ class GameBoard(
     private var lastClearWasTetris = false
     private var lastClearWasPerfect = false
     private var lastClearWasAllClear = false
+    private var lastPieceClearedLines = false  // Track if the last piece placed cleared lines
     
     // Animation state
     var linesToClear = mutableListOf<Int>()
@@ -326,6 +327,18 @@ class GameBoard(
                 calculateScore(shiftAmount)
             }.start()
         }
+        
+        // Update combo based on whether this piece cleared lines
+        if (shiftAmount > 0) {
+            if (lastPieceClearedLines) {
+                combo++
+            } else {
+                combo = 1  // Start new combo
+            }
+        } else {
+            combo = 0  // Reset combo if no lines cleared
+        }
+        lastPieceClearedLines = shiftAmount > 0
     }
     
     /**
@@ -396,13 +409,6 @@ class GameBoard(
         Thread {
             score += finalScore
         }.start()
-        
-        // Update combo counter
-        if (clearedLines > 0) {
-            combo++
-        } else {
-            combo = 0
-        }
         
         // Update line clear state
         lastClearWasTetris = clearedLines == 4
@@ -528,6 +534,7 @@ class GameBoard(
         lastClearWasTetris = false
         lastClearWasPerfect = false
         lastClearWasAllClear = false
+        lastPieceClearedLines = false
         
         // Reset piece state
         holdPiece = null
@@ -545,4 +552,9 @@ class GameBoard(
     private fun clearLines(): Int {
         return linesToClear.size // Return the number of lines that will be cleared
     }
+    
+    /**
+     * Get the current combo count
+     */
+    fun getCombo(): Int = combo
 } 

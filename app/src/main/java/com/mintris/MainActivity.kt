@@ -203,6 +203,7 @@ class MainActivity : AppCompatActivity() {
         binding.scoreText.text = score.toString()
         binding.currentLevelText.text = level.toString()
         binding.linesText.text = lines.toString()
+        binding.comboText.text = gameBoard.getCombo().toString()
         
         // Force redraw of next piece preview
         binding.nextPieceView.invalidate()

@@ -83,6 +83,15 @@
                 android:textSize="24sp"
                 android:fontFamily="sans-serif-light"
                 tools:text="Lines: 0" />
+
+            <TextView
+                android:id="@+id/comboText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-light"
+                tools:text="Combo: 0" />
         </LinearLayout>
 
         <!-- Next Piece Preview -->

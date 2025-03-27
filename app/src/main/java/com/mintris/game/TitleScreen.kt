@@ -10,6 +10,8 @@ import android.view.MotionEvent
 import android.view.View
 import java.util.Random
 import android.util.Log
+import com.mintris.model.HighScoreManager
+import com.mintris.model.HighScore
 
 class TitleScreen @JvmOverloads constructor(
     context: Context,
@@ -21,6 +23,7 @@ class TitleScreen @JvmOverloads constructor(
     private val glowPaint = Paint()
     private val titlePaint = Paint()
     private val promptPaint = Paint()
+    private val highScorePaint = Paint()
     private val cellSize = 30f
     private val random = Random()
     private var width = 0
@@ -106,6 +109,16 @@ class TitleScreen @JvmOverloads constructor(
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
             isAntiAlias = true
             alpha = 180
+        }
+        
+        // High scores text settings
+        highScorePaint.apply {
+            color = Color.WHITE
+            textSize = 35f
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            isAntiAlias = true
+            alpha = 200
         }
         
         // General paint settings for tetrominos (white)
@@ -239,8 +252,19 @@ class TitleScreen @JvmOverloads constructor(
             val titleY = height * 0.4f
             canvas.drawText("mintris", width / 2f, titleY, titlePaint)
             
+            // Draw high scores
+            val highScoreManager = HighScoreManager(context)
+            val highScores: List<HighScore> = highScoreManager.getHighScores()
+            val highScoreY = height * 0.5f
+            if (highScores.isNotEmpty()) {
+                highScores.forEachIndexed { index: Int, score: HighScore ->
+                    val y = highScoreY + (index * 35f)
+                    canvas.drawText("${index + 1}. ${score.name}: ${score.score}", width / 2f, y, highScorePaint)
+                }
+            }
+            
             // Draw "touch to start" prompt
-            canvas.drawText("touch to start", width / 2f, height * 0.6f, promptPaint)
+            canvas.drawText("touch to start", width / 2f, height * 0.7f, promptPaint)
             
             // Request another frame
             invalidate()
