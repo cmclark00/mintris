@@ -72,7 +72,7 @@ The game features a comprehensive scoring system:
 - Swipe left/right to move piece
 - Swipe down quickly for hard drop
 - Swipe down slowly for soft drop
-- Double tap to rotate
+- Single tap to rotate
 
 ### Visual Effects
 - Smooth piece movement animations
