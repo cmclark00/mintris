@@ -21,6 +21,9 @@ import com.mintris.model.GameBoard
 import com.mintris.audio.GameMusic
 import com.mintris.model.HighScoreManager
 import android.content.Intent
+import com.mintris.model.StatsManager
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
     
@@ -32,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameMusic: GameMusic
     private lateinit var titleScreen: TitleScreen
     private lateinit var highScoreManager: HighScoreManager
+    private lateinit var statsManager: StatsManager
     
     // Game state
     private var isSoundEnabled = true
@@ -40,6 +44,8 @@ class MainActivity : AppCompatActivity() {
     private val maxLevel = 20
     private var currentScore = 0
     private var currentLevel = 1
+    private var gameStartTime: Long = 0
+    private var piecesPlaced: Int = 0
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         titleScreen = binding.titleScreen
         gameMusic = GameMusic(this)
         highScoreManager = HighScoreManager(this)
+        statsManager = StatsManager(this)
         
         // Set up game view
         gameView.setGameBoard(gameBoard)
@@ -117,6 +124,8 @@ class MainActivity : AppCompatActivity() {
             } else {
                 android.util.Log.d("MainActivity", "Sound is disabled, skipping haptic feedback")
             }
+            // Record line clear in stats
+            statsManager.recordLineClear(lineCount)
         }
         
         // Add callbacks for piece movement and locking
@@ -130,6 +139,7 @@ class MainActivity : AppCompatActivity() {
             if (isSoundEnabled) {
                 gameHaptics.vibrateForPieceLock()
             }
+            piecesPlaced++
         }
         
         // Set up button click listeners with haptic feedback
@@ -187,6 +197,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        // Set up stats button
+        binding.statsButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            val intent = Intent(this, StatsActivity::class.java)
+            startActivity(intent)
+        }
+        
         // Initialize level selector
         updateLevelSelector()
         
@@ -205,6 +222,9 @@ class MainActivity : AppCompatActivity() {
         binding.linesText.text = lines.toString()
         binding.comboText.text = gameBoard.getCombo().toString()
         
+        // Update current level for stats
+        currentLevel = level
+        
         // Force redraw of next piece preview
         binding.nextPieceView.invalidate()
     }
@@ -213,7 +233,35 @@ class MainActivity : AppCompatActivity() {
      * Show game over screen
      */
     private fun showGameOver(score: Int) {
-        binding.finalScoreText.text = getString(R.string.score) + ": " + score
+        val gameTime = System.currentTimeMillis() - gameStartTime
+        
+        // Update session stats
+        statsManager.updateSessionStats(
+            score = score,
+            lines = gameBoard.lines,
+            pieces = piecesPlaced,
+            time = gameTime,
+            level = currentLevel
+        )
+        
+        // End session and save stats
+        statsManager.endSession()
+        
+        // Update session stats display
+        val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        timeFormat.timeZone = TimeZone.getTimeZone("UTC")
+        
+        binding.sessionScoreText.text = getString(R.string.session_score, score)
+        binding.sessionLinesText.text = getString(R.string.session_lines, gameBoard.lines)
+        binding.sessionPiecesText.text = getString(R.string.session_pieces, piecesPlaced)
+        binding.sessionTimeText.text = getString(R.string.session_time, timeFormat.format(gameTime))
+        binding.sessionLevelText.text = getString(R.string.session_level, currentLevel)
+        
+        // Update session line clear stats
+        binding.sessionSinglesText.text = getString(R.string.singles, statsManager.getSessionSingles())
+        binding.sessionDoublesText.text = getString(R.string.doubles, statsManager.getSessionDoubles())
+        binding.sessionTriplesText.text = getString(R.string.triples, statsManager.getSessionTriples())
+        binding.sessionTetrisesText.text = getString(R.string.tetrises, statsManager.getSessionTetrises())
         
         // Check if this is a high score
         if (highScoreManager.isHighScore(score)) {
@@ -291,10 +339,13 @@ class MainActivity : AppCompatActivity() {
     
     private fun startGame() {
         gameView.start()
-        gameMusic.setEnabled(isMusicEnabled)  // Explicitly set enabled state
+        gameMusic.setEnabled(isMusicEnabled)
         if (isMusicEnabled) {
             gameMusic.start()
         }
+        gameStartTime = System.currentTimeMillis()
+        piecesPlaced = 0
+        statsManager.startNewSession()
     }
     
     private fun restartGame() {

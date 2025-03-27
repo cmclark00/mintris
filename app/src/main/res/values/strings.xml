@@ -20,4 +20,28 @@
     <string name="new_high_score">New High Score!</string>
     <string name="save">Save</string>
     <string name="back">Back</string>
+    
+    <!-- Stats Screen -->
+    <string name="lifetime_stats">Lifetime Stats</string>
+    <string name="best_performance">Best Performance</string>
+    <string name="total_games">Total Games: %d</string>
+    <string name="total_score">Total Score: %d</string>
+    <string name="total_lines">Total Lines: %d</string>
+    <string name="total_pieces">Total Pieces: %d</string>
+    <string name="total_time">Total Time: %s</string>
+    <string name="max_level">Max Level: %d</string>
+    <string name="max_score">Max Score: %d</string>
+    <string name="max_lines">Max Lines: %d</string>
+    <string name="stats">Stats</string>
+    <string name="session_stats">Session Stats</string>
+    <string name="session_score">Score: %d</string>
+    <string name="session_lines">Lines: %d</string>
+    <string name="session_pieces">Pieces: %d</string>
+    <string name="session_time">Time: %s</string>
+    <string name="session_level">Level: %d</string>
+    <string name="line_clears">Line Clears</string>
+    <string name="singles">Singles: %d</string>
+    <string name="doubles">Doubles: %d</string>
+    <string name="triples">Triples: %d</string>
+    <string name="tetrises">Tetrises: %d</string>
 </resources> 
