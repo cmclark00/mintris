@@ -7,7 +7,6 @@ A modern Tetris implementation for Android, featuring smooth animations, respons
 ### Core Gameplay
 - Classic Tetris mechanics
 - 7-bag randomizer for piece distribution
-- Hold piece functionality
 - Ghost piece preview
 - Hard drop and soft drop
 - T-Spin detection and scoring
@@ -70,11 +69,10 @@ The game features a comprehensive scoring system:
    - Triple: 6x
 
 ### Controls
-- Tap left/right to move piece
-- Tap up or double tap to rotate
-- Swipe down for soft drop
-- Fast swipe down for hard drop
-- Long press to hold piece
+- Swipe left/right to move piece
+- Swipe down quickly for hard drop
+- Swipe down slowly for soft drop
+- Double tap to rotate
 
 ### Visual Effects
 - Smooth piece movement animations
