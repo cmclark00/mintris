@@ -12,6 +12,7 @@ import java.util.Random
 import android.util.Log
 import com.mintris.model.HighScoreManager
 import com.mintris.model.HighScore
+import kotlin.math.abs
 
 class TitleScreen @JvmOverloads constructor(
     context: Context,
@@ -29,6 +30,13 @@ class TitleScreen @JvmOverloads constructor(
     private var width = 0
     private var height = 0
     private val tetrominosToAdd = mutableListOf<Tetromino>()
+    
+    // Touch handling variables
+    private var startX = 0f
+    private var startY = 0f
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+    private val maxTapMovement = 20f  // Maximum movement allowed for a tap (in pixels)
     
     // Callback for when the user touches the screen
     var onStartGame: (() -> Unit)? = null
@@ -274,10 +282,50 @@ class TitleScreen @JvmOverloads constructor(
     }
     
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_DOWN) {
-            onStartGame?.invoke()
-            return true
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = event.x
+                startY = event.y
+                lastTouchX = event.x
+                lastTouchY = event.y
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val deltaX = event.x - lastTouchX
+                val deltaY = event.y - lastTouchY
+                
+                // Update tetromino positions
+                for (tetromino in tetrominos) {
+                    tetromino.x += deltaX * 0.5f
+                    tetromino.y += deltaY * 0.5f
+                }
+                
+                lastTouchX = event.x
+                lastTouchY = event.y
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                val deltaX = event.x - startX
+                val deltaY = event.y - startY
+                
+                // If the movement was minimal, treat as a tap
+                if (abs(deltaX) < maxTapMovement && abs(deltaY) < maxTapMovement) {
+                    performClick()
+                }
+                
+                return true
+            }
         }
         return super.onTouchEvent(event)
+    }
+
+    override fun performClick(): Boolean {
+        // Call the superclass's performClick
+        super.performClick()
+        
+        // Handle the click event
+        onStartGame?.invoke()
+        return true
     }
 } 
