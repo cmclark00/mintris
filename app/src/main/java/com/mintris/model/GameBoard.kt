@@ -31,6 +31,8 @@ class GameBoard(
     var level = 1
     var lines = 0
     var isGameOver = false
+    var isHardDropInProgress = false  // Make public
+    var isPieceLocking = false  // Make public
     
     // Scoring state
     private var combo = 0
@@ -150,6 +152,9 @@ class GameBoard(
      * Move the current piece down (soft drop)
      */
     fun moveDown(): Boolean {
+        // Don't allow movement if a hard drop is in progress or piece is locking
+        if (isHardDropInProgress || isPieceLocking) return false
+        
         return if (canMove(0, 1)) {
             currentPiece?.y = currentPiece?.y?.plus(1) ?: 0
             onPieceMove?.invoke()
@@ -164,9 +169,19 @@ class GameBoard(
      * Hard drop the current piece
      */
     fun hardDrop() {
-        while (moveDown()) {
-            // Keep moving down until blocked
+        if (isHardDropInProgress || isPieceLocking) return  // Prevent multiple hard drops
+        
+        isHardDropInProgress = true
+        val piece = currentPiece ?: return
+        
+        // Move piece down until it can't move anymore
+        while (canMove(0, 1)) {
+            piece.y++
+            onPieceMove?.invoke()
         }
+        
+        // Lock the piece immediately
+        lockPiece()
     }
     
     /**
@@ -249,9 +264,12 @@ class GameBoard(
     }
     
     /**
-     * Lock the current piece in place and check for completed lines
+     * Lock the current piece in place
      */
-    fun lockPiece() {
+    private fun lockPiece() {
+        if (isPieceLocking) return  // Prevent recursive locking
+        isPieceLocking = true
+        
         val piece = currentPiece ?: return
         
         // Add the piece to the grid
@@ -275,11 +293,15 @@ class GameBoard(
         // Find and clear lines immediately
         findAndClearLines()
         
-        // Spawn new piece
+        // Spawn new piece immediately
         spawnPiece()
         
         // Allow holding piece again after locking
         canHold = true
+        
+        // Reset both states after everything is done
+        isPieceLocking = false
+        isHardDropInProgress = false
     }
     
     /**
