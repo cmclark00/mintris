@@ -49,7 +49,7 @@ class GameBoard(
     var onPieceMove: (() -> Unit)? = null
     var onPieceLock: (() -> Unit)? = null
     var onNextPieceChanged: (() -> Unit)? = null
-    var onLineClear: ((Int) -> Unit)? = null
+    var onLineClear: ((Int, List<Int>) -> Unit)? = null
     
     init {
         spawnNextPiece()
@@ -226,8 +226,13 @@ class GameBoard(
                     val boardX = newX + x
                     val boardY = newY + y
                     
-                    // Check if the position is outside the board
-                    if (boardX < 0 || boardX >= width || boardY >= height) {
+                    // Check if the position is outside the board horizontally
+                    if (boardX < 0 || boardX >= width) {
+                        return false
+                    }
+                    
+                    // Check if the position is below the board
+                    if (boardY >= height) {
                         return false
                     }
                     
@@ -283,10 +288,12 @@ class GameBoard(
         // Quick scan for completed lines
         var shiftAmount = 0
         var y = height - 1
+        val linesToClear = mutableListOf<Int>()
         
         while (y >= 0) {
             if (grid[y].all { it }) {
-                // Line is full, increment shift amount
+                // Line is full, add to lines to clear
+                linesToClear.add(y)
                 shiftAmount++
             } else if (shiftAmount > 0) {
                 // Shift this row down by shiftAmount
@@ -295,24 +302,24 @@ class GameBoard(
             y--
         }
         
-        // Clear top rows
-        for (y in 0 until shiftAmount) {
-            java.util.Arrays.fill(grid[y], false)
-        }
-        
         // If lines were cleared, calculate score in background and trigger callback
         if (shiftAmount > 0) {
             android.util.Log.d("GameBoard", "Lines cleared: $shiftAmount")
-            // Trigger line clear callback on main thread
+            // Trigger line clear callback on main thread with the lines that were cleared
             val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
             mainHandler.post {
                 android.util.Log.d("GameBoard", "Triggering onLineClear callback with $shiftAmount lines")
                 try {
-                    onLineClear?.invoke(shiftAmount)
+                    onLineClear?.invoke(shiftAmount, linesToClear)  // Pass the lines that were cleared
                     android.util.Log.d("GameBoard", "onLineClear callback completed successfully")
                 } catch (e: Exception) {
                     android.util.Log.e("GameBoard", "Error in onLineClear callback", e)
                 }
+            }
+            
+            // Clear top rows after callback
+            for (y in 0 until shiftAmount) {
+                java.util.Arrays.fill(grid[y], false)
             }
             
             Thread {
@@ -448,7 +455,8 @@ class GameBoard(
             }
         }
         
-        return ghostY
+        // Ensure ghostY doesn't exceed the board height
+        return ghostY.coerceAtMost(height - 1)
     }
     
     /**
@@ -462,6 +470,17 @@ class GameBoard(
     fun isOccupied(x: Int, y: Int): Boolean {
         return if (x in 0 until width && y in 0 until height) {
             grid[y][x]
+        } else {
+            false
+        }
+    }
+    
+    /**
+     * Check if a line is completely filled
+     */
+    fun isLineFull(y: Int): Boolean {
+        return if (y in 0 until height) {
+            grid[y].all { it }
         } else {
             false
         }
@@ -499,9 +518,10 @@ class GameBoard(
         
         // Reset game state
         score = 0
+        level = 1
         lines = 0
         isGameOver = false
-        dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
+        dropInterval = 1000L  // Reset to level 1 speed
         
         // Reset scoring state
         combo = 0

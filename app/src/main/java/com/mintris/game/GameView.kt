@@ -62,6 +62,7 @@ class GameView @JvmOverloads constructor(
         isAntiAlias = true
         strokeWidth = 1f
         style = Paint.Style.STROKE
+        maskFilter = null  // Ensure no blur effect on grid lines
     }
     
     private val glowPaint = Paint().apply {
@@ -88,6 +89,15 @@ class GameView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = 2f
         maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.OUTER)
+    }
+    
+    // Add a new paint for the pulse effect
+    private val pulsePaint = Paint().apply {
+        color = Color.CYAN
+        alpha = 255
+        isAntiAlias = true
+        style = Paint.Style.FILL
+        maskFilter = BlurMaskFilter(32f, BlurMaskFilter.Blur.OUTER)  // Increased from 16f to 32f
     }
     
     // Pre-allocate paint objects to avoid GC
@@ -131,6 +141,12 @@ class GameView @JvmOverloads constructor(
     var onPieceMove: (() -> Unit)? = null // New callback for piece movement
     var onPieceLock: (() -> Unit)? = null // New callback for piece locking
     
+    // Animation state
+    private var pulseAnimator: ValueAnimator? = null
+    private var pulseAlpha = 0f
+    private var isPulsing = false
+    private var linesToPulse = mutableListOf<Int>()  // Track which lines are being cleared
+    
     init {
         // Start with paused state
         pause()
@@ -138,10 +154,15 @@ class GameView @JvmOverloads constructor(
         // Connect our callbacks to the GameBoard
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { onPieceLock?.invoke() }
-        gameBoard.onLineClear = { lineCount -> 
+        gameBoard.onLineClear = { lineCount, clearedLines -> 
             android.util.Log.d("GameView", "Received line clear from GameBoard: $lineCount lines")
             try {
                 onLineClear?.invoke(lineCount)
+                // Use the lines that were cleared directly
+                linesToPulse.clear()
+                linesToPulse.addAll(clearedLines)
+                android.util.Log.d("GameView", "Found ${linesToPulse.size} lines to pulse")
+                startPulseAnimation(lineCount)
                 android.util.Log.d("GameView", "Forwarded line clear callback")
             } catch (e: Exception) {
                 android.util.Log.e("GameView", "Error forwarding line clear callback", e)
@@ -241,15 +262,24 @@ class GameView @JvmOverloads constructor(
         val horizontalBlocks = gameBoard.width
         val verticalBlocks = gameBoard.height
         
-        // Calculate block size to fit within the view
-        blockSize = min(
-            width.toFloat() / horizontalBlocks,
-            height.toFloat() / verticalBlocks
-        )
+        // Account for all glow effects and borders
+        val borderPadding = 16f  // Padding for border glow effects
         
-        // Center horizontally and align to bottom
-        boardLeft = (width - (blockSize * horizontalBlocks)) / 2
-        boardTop = height - (blockSize * verticalBlocks)  // Align to bottom
+        // Calculate block size to fit the height exactly, accounting for all padding
+        blockSize = (height.toFloat() - (borderPadding * 2)) / verticalBlocks
+        
+        // Calculate total board width
+        val totalBoardWidth = blockSize * horizontalBlocks
+        
+        // Center horizontally
+        boardLeft = (width - totalBoardWidth) / 2
+        boardTop = borderPadding  // Start with border padding from top
+        
+        // Calculate the total height needed for the board
+        val totalHeight = blockSize * verticalBlocks
+        
+        // Log dimensions for debugging
+        android.util.Log.d("GameView", "Board dimensions: width=$width, height=$height, blockSize=$blockSize, boardLeft=$boardLeft, boardTop=$boardTop, totalHeight=$totalHeight")
     }
     
     override fun onDraw(canvas: Canvas) {
@@ -297,13 +327,60 @@ class GameView @JvmOverloads constructor(
         val bottom = boardTop + gameBoard.height * blockSize
         
         val rect = RectF(left, top, right, bottom)
+        
+        // Draw base border with increased glow
+        borderGlowPaint.apply {
+            alpha = 80  // Increased from 60
+            maskFilter = BlurMaskFilter(16f, BlurMaskFilter.Blur.OUTER)  // Increased from 8f
+        }
         canvas.drawRect(rect, borderGlowPaint)
+        
+        // Draw pulsing border if animation is active
+        if (isPulsing) {
+            val pulseBorderPaint = Paint().apply {
+                color = Color.WHITE
+                style = Paint.Style.STROKE
+                strokeWidth = 6f + (16f * pulseAlpha)  // Increased from 4f+12f to 6f+16f
+                alpha = (255 * pulseAlpha).toInt()
+                isAntiAlias = true
+                maskFilter = BlurMaskFilter(32f * (1f + pulseAlpha), BlurMaskFilter.Blur.OUTER)  // Increased from 24f to 32f
+            }
+            // Draw the border with a slight inset to prevent edge artifacts
+            val inset = 1f
+            canvas.drawRect(
+                left + inset,
+                top + inset,
+                right - inset,
+                bottom - inset,
+                pulseBorderPaint
+            )
+            
+            // Add an additional outer glow for more dramatic effect
+            val outerGlowPaint = Paint().apply {
+                color = Color.WHITE
+                style = Paint.Style.STROKE
+                strokeWidth = 2f
+                alpha = (128 * pulseAlpha).toInt()
+                isAntiAlias = true
+                maskFilter = BlurMaskFilter(48f * (1f + pulseAlpha), BlurMaskFilter.Blur.OUTER)
+            }
+            canvas.drawRect(
+                left - 4f,
+                top - 4f,
+                right + 4f,
+                bottom + 4f,
+                outerGlowPaint
+            )
+        }
     }
     
     /**
      * Draw the grid lines (very subtle)
      */
     private fun drawGrid(canvas: Canvas) {
+        // Save the canvas state to prevent any effects from affecting the grid
+        canvas.save()
+        
         // Draw vertical grid lines
         for (x in 0..gameBoard.width) {
             val xPos = boardLeft + x * blockSize
@@ -323,6 +400,9 @@ class GameView @JvmOverloads constructor(
                 gridPaint
             )
         }
+        
+        // Restore the canvas state
+        canvas.restore()
     }
     
     /**
@@ -332,7 +412,7 @@ class GameView @JvmOverloads constructor(
         for (y in 0 until gameBoard.height) {
             for (x in 0 until gameBoard.width) {
                 if (gameBoard.isOccupied(x, y)) {
-                    drawBlock(canvas, x, y, false)
+                    drawBlock(canvas, x, y, false, y in linesToPulse)
                 }
             }
         }
@@ -350,10 +430,9 @@ class GameView @JvmOverloads constructor(
                     val boardX = piece.x + x
                     val boardY = piece.y + y
                     
-                    // Only draw if within bounds and visible on screen
-                    if (boardY >= 0 && boardY < gameBoard.height && 
-                        boardX >= 0 && boardX < gameBoard.width) {
-                        drawBlock(canvas, boardX, boardY, false)
+                    // Draw piece regardless of vertical position
+                    if (boardX >= 0 && boardX < gameBoard.width) {
+                        drawBlock(canvas, boardX, boardY, false, false)
                     }
                 }
             }
@@ -373,10 +452,9 @@ class GameView @JvmOverloads constructor(
                     val boardX = piece.x + x
                     val boardY = ghostY + y
                     
-                    // Only draw if within bounds and visible on screen
-                    if (boardY >= 0 && boardY < gameBoard.height && 
-                        boardX >= 0 && boardX < gameBoard.width) {
-                        drawBlock(canvas, boardX, boardY, true)
+                    // Draw ghost piece regardless of vertical position
+                    if (boardX >= 0 && boardX < gameBoard.width) {
+                        drawBlock(canvas, boardX, boardY, true, false)
                     }
                 }
             }
@@ -386,11 +464,14 @@ class GameView @JvmOverloads constructor(
     /**
      * Draw a single tetris block at the given grid position
      */
-    private fun drawBlock(canvas: Canvas, x: Int, y: Int, isGhost: Boolean) {
+    private fun drawBlock(canvas: Canvas, x: Int, y: Int, isGhost: Boolean, isPulsingLine: Boolean) {
         val left = boardLeft + x * blockSize
         val top = boardTop + y * blockSize
         val right = left + blockSize
         val bottom = top + blockSize
+        
+        // Save canvas state before drawing block effects
+        canvas.save()
         
         // Draw outer glow
         blockGlowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
@@ -406,6 +487,21 @@ class GameView @JvmOverloads constructor(
         // Draw inner glow
         glowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
         canvas.drawRect(left + 1f, top + 1f, right - 1f, bottom - 1f, glowPaint)
+        
+        // Draw pulse effect if animation is active and this is a pulsing line
+        if (isPulsing && isPulsingLine) {
+            val pulseBlockPaint = Paint().apply {
+                color = Color.WHITE
+                alpha = (255 * pulseAlpha).toInt()
+                isAntiAlias = true
+                style = Paint.Style.FILL
+                maskFilter = BlurMaskFilter(40f * (1f + pulseAlpha), BlurMaskFilter.Blur.OUTER)
+            }
+            canvas.drawRect(left - 16f, top - 16f, right + 16f, bottom + 16f, pulseBlockPaint)
+        }
+        
+        // Restore canvas state after drawing block effects
+        canvas.restore()
     }
     
     /**
@@ -573,10 +669,15 @@ class GameView @JvmOverloads constructor(
         // Reconnect callbacks to the new board
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { onPieceLock?.invoke() }
-        gameBoard.onLineClear = { lineCount -> 
+        gameBoard.onLineClear = { lineCount, clearedLines -> 
             android.util.Log.d("GameView", "Received line clear from GameBoard: $lineCount lines")
             try {
                 onLineClear?.invoke(lineCount)
+                // Use the lines that were cleared directly
+                linesToPulse.clear()
+                linesToPulse.addAll(clearedLines)
+                android.util.Log.d("GameView", "Found ${linesToPulse.size} lines to pulse")
+                startPulseAnimation(lineCount)
                 android.util.Log.d("GameView", "Forwarded line clear callback")
             } catch (e: Exception) {
                 android.util.Log.e("GameView", "Error forwarding line clear callback", e)
@@ -609,5 +710,43 @@ class GameView @JvmOverloads constructor(
         // Force an update to ensure pieces move immediately
         update()
         invalidate()
+    }
+    
+    /**
+     * Start the pulse animation for line clear
+     */
+    private fun startPulseAnimation(lineCount: Int) {
+        android.util.Log.d("GameView", "Starting pulse animation for $lineCount lines")
+        
+        // Cancel any existing animation
+        pulseAnimator?.cancel()
+        
+        // Create new animation
+        pulseAnimator = ValueAnimator.ofFloat(0f, 1f, 0f).apply {
+            duration = when (lineCount) {
+                4 -> 2000L  // Tetris - longer duration
+                3 -> 1600L  // Triples
+                2 -> 1200L  // Doubles
+                1 -> 1000L   // Singles
+                else -> 1000L
+            }
+            interpolator = LinearInterpolator()
+            addUpdateListener { animation ->
+                pulseAlpha = animation.animatedValue as Float
+                isPulsing = true
+                invalidate()
+                android.util.Log.d("GameView", "Pulse animation update: alpha = $pulseAlpha")
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    isPulsing = false
+                    pulseAlpha = 0f
+                    linesToPulse.clear()
+                    invalidate()
+                    android.util.Log.d("GameView", "Pulse animation ended")
+                }
+            })
+        }
+        pulseAnimator?.start()
     }
 }
