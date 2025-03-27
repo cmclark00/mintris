@@ -126,9 +126,9 @@ class TitleScreen @JvmOverloads constructor(
         // High scores text settings
         highScorePaint.apply {
             color = Color.WHITE
-            textSize = 35f
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            textSize = 70f
+            textAlign = Paint.Align.LEFT  // Changed to LEFT alignment
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)  // Changed to monospace
             isAntiAlias = true
             alpha = 200
         }
@@ -241,9 +241,17 @@ class TitleScreen @JvmOverloads constructor(
             val highScores: List<HighScore> = highScoreManager.getHighScores()
             val highScoreY = height * 0.5f
             if (highScores.isNotEmpty()) {
+                // Calculate the starting X position to center the entire block of scores
+                val maxScoreWidth = highScorePaint.measureText("99. PLAYER: 999999")
+                val startX = (width - maxScoreWidth) / 2
+                
                 highScores.forEachIndexed { index: Int, score: HighScore ->
-                    val y = highScoreY + (index * 35f)
-                    canvas.drawText("${index + 1}. ${score.name}: ${score.score}", width / 2f, y, highScorePaint)
+                    val y = highScoreY + (index * 80f)
+                    // Pad the rank number to ensure alignment
+                    val rank = (index + 1).toString().padStart(2, ' ')
+                    // Pad the name to ensure score alignment
+                    val paddedName = score.name.padEnd(8, ' ')
+                    canvas.drawText("$rank. $paddedName ${score.score}", startX, y, highScorePaint)
                 }
             }
             

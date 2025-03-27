@@ -346,6 +346,7 @@ class MainActivity : AppCompatActivity() {
         gameStartTime = System.currentTimeMillis()
         piecesPlaced = 0
         statsManager.startNewSession()
+        gameBoard.updateLevel(selectedLevel)
     }
     
     private fun restartGame() {
