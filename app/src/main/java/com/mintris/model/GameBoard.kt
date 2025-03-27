@@ -265,174 +265,135 @@ class GameBoard(
         // Trigger the piece lock vibration
         onPieceLock?.invoke()
         
-        // Find lines to clear
-        findLinesToClear()
+        // Find and clear lines immediately
+        findAndClearLines()
         
-        // Only spawn a new piece if we're not in the middle of clearing lines
-        if (!isLineClearAnimationInProgress) {
-            spawnPiece()
-        }
+        // Spawn new piece
+        spawnPiece()
         
         // Allow holding piece again after locking
         canHold = true
     }
     
     /**
-     * Find lines that should be cleared and store them
+     * Find and clear completed lines immediately
      */
-    private fun findLinesToClear() {
-        // Clear existing lines
-        linesToClear.clear()
-        
+    private fun findAndClearLines() {
         // Quick scan for completed lines
-        for (y in 0 until height) {
-            val row = grid[y]
-            
-            // Check if line is full - use all() for better performance
-            if (row.all { it }) {
-                linesToClear.add(y)
+        var shiftAmount = 0
+        var y = height - 1
+        
+        while (y >= 0) {
+            if (grid[y].all { it }) {
+                // Line is full, increment shift amount
+                shiftAmount++
+            } else if (shiftAmount > 0) {
+                // Shift this row down by shiftAmount
+                System.arraycopy(grid[y], 0, grid[y + shiftAmount], 0, width)
             }
+            y--
         }
         
-        // Sort lines from bottom to top for proper clearing
-        if (linesToClear.isNotEmpty()) {
-            linesToClear.sortDescending()
-            isLineClearAnimationInProgress = true
+        // Clear top rows
+        for (y in 0 until shiftAmount) {
+            java.util.Arrays.fill(grid[y], false)
+        }
+        
+        // If lines were cleared, calculate score in background
+        if (shiftAmount > 0) {
+            Thread {
+                calculateScore(shiftAmount)
+            }.start()
         }
     }
     
     /**
-     * Prepare for line clearing animation
+     * Calculate score for cleared lines
      */
-    fun finishLineClearingEffect() {
-        if (linesToClear.isNotEmpty() && !isLineClearAnimationInProgress) {
-            clearLinesFromGrid()
+    private fun calculateScore(clearedLines: Int) {
+        // Pre-calculated score multipliers for better performance
+        val baseScore = when (clearedLines) {
+            1 -> 40
+            2 -> 100
+            3 -> 300
+            4 -> 1200
+            else -> 0
         }
-    }
-    
-    /**
-     * Actually clear the lines from the grid after animation
-     */
-    fun clearLinesFromGrid() {
-        if (linesToClear.isNotEmpty()) {
-            val clearedLines = linesToClear.size
-            
-            // Much faster approach: shift rows in-place without creating temporary arrays
-            // Pre-compute all row movements to minimize array operations
-            val rowMoves = IntArray(height) { -1 } // Where each row should move to
-            var shiftAmount = 0
-            
-            // Calculate how much to shift each row
-            for (y in height - 1 downTo 0) {
-                if (y in linesToClear) {
-                    shiftAmount++
-                } else if (shiftAmount > 0) {
-                    rowMoves[y] = y + shiftAmount
-                }
+        
+        // Check for perfect clear (no blocks left)
+        val isPerfectClear = !grid.any { row -> row.any { it } }
+        
+        // Check for all clear (no blocks in playfield)
+        val isAllClear = !grid.any { row -> row.any { it } } && 
+                        currentPiece == null && 
+                        nextPiece == null
+        
+        // Calculate combo multiplier
+        val comboMultiplier = if (combo > 0) {
+            when (combo) {
+                1 -> 1.0
+                2 -> 1.5
+                3 -> 2.0
+                4 -> 2.5
+                else -> 3.0
             }
-            
-            // Apply row shifts in a single pass, bottom to top
-            for (y in height - 1 downTo 0) {
-                val targetY = rowMoves[y]
-                if (targetY != -1 && targetY < height) {
-                    // Shift this row down
-                    System.arraycopy(grid[y], 0, grid[targetY], 0, width)
-                }
+        } else 1.0
+        
+        // Calculate back-to-back Tetris bonus
+        val backToBackMultiplier = if (clearedLines == 4 && lastClearWasTetris) 1.5 else 1.0
+        
+        // Calculate perfect clear bonus
+        val perfectClearMultiplier = if (isPerfectClear) {
+            when (clearedLines) {
+                1 -> 2.0
+                2 -> 3.0
+                3 -> 4.0
+                4 -> 5.0
+                else -> 1.0
             }
-            
-            // Clear top rows (faster than creating a new array)
-            for (y in 0 until clearedLines) {
-                java.util.Arrays.fill(grid[y], false)
+        } else 1.0
+        
+        // Calculate all clear bonus
+        val allClearMultiplier = if (isAllClear) 2.0 else 1.0
+        
+        // Calculate T-Spin bonus
+        val tSpinMultiplier = if (isTSpin()) {
+            when (clearedLines) {
+                1 -> 2.0
+                2 -> 4.0
+                3 -> 6.0
+                else -> 1.0
             }
-            
-            // Calculate base score (NES scoring system)
-            val baseScore = when (clearedLines) {
-                1 -> 40
-                2 -> 100
-                3 -> 300
-                4 -> 1200 // Tetris
-                else -> 0
-            }
-            
-            // Check for perfect clear (no blocks left)
-            val isPerfectClear = !grid.any { row -> row.any { it } }
-            
-            // Check for all clear (no blocks in playfield)
-            val isAllClear = !grid.any { row -> row.any { it } } && 
-                           currentPiece == null && 
-                           nextPiece == null
-            
-            // Calculate combo multiplier
-            val comboMultiplier = if (combo > 0) {
-                when (combo) {
-                    1 -> 1.0
-                    2 -> 1.5
-                    3 -> 2.0
-                    4 -> 2.5
-                    else -> 3.0
-                }
-            } else 1.0
-            
-            // Calculate back-to-back Tetris bonus
-            val backToBackMultiplier = if (clearedLines == 4 && lastClearWasTetris) 1.5 else 1.0
-            
-            // Calculate perfect clear bonus
-            val perfectClearMultiplier = if (isPerfectClear) {
-                when (clearedLines) {
-                    1 -> 2.0
-                    2 -> 3.0
-                    3 -> 4.0
-                    4 -> 5.0
-                    else -> 1.0
-                }
-            } else 1.0
-            
-            // Calculate all clear bonus
-            val allClearMultiplier = if (isAllClear) 2.0 else 1.0
-            
-            // Calculate T-Spin bonus
-            val tSpinMultiplier = if (isTSpin()) {
-                when (clearedLines) {
-                    1 -> 2.0
-                    2 -> 4.0
-                    3 -> 6.0
-                    else -> 1.0
-                }
-            } else 1.0
-            
-            // Calculate final score with all multipliers
-            val finalScore = (baseScore * level * comboMultiplier * 
-                            backToBackMultiplier * perfectClearMultiplier * 
-                            allClearMultiplier * tSpinMultiplier).toInt()
-            
+        } else 1.0
+        
+        // Calculate final score with all multipliers
+        val finalScore = (baseScore * level * comboMultiplier * 
+                        backToBackMultiplier * perfectClearMultiplier * 
+                        allClearMultiplier * tSpinMultiplier).toInt()
+        
+        // Update score on main thread
+        Thread {
             score += finalScore
-            
-            // Update combo counter
-            if (clearedLines > 0) {
-                combo++
-            } else {
-                combo = 0
-            }
-            
-            // Update line clear state
-            lastClearWasTetris = clearedLines == 4
-            lastClearWasPerfect = isPerfectClear
-            lastClearWasAllClear = isAllClear
-            
-            // Update lines cleared and level
-            lines += clearedLines
-            level = (lines / 10) + 1
-            
-            // Update game speed based on level (NES formula)
-            dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
-            
-            // Reset animation state immediately
-            isLineClearAnimationInProgress = false
-            linesToClear.clear()
-            
-            // Now spawn the next piece after all lines are cleared
-            spawnPiece()
+        }.start()
+        
+        // Update combo counter
+        if (clearedLines > 0) {
+            combo++
+        } else {
+            combo = 0
         }
+        
+        // Update line clear state
+        lastClearWasTetris = clearedLines == 4
+        lastClearWasPerfect = isPerfectClear
+        lastClearWasAllClear = isAllClear
+        
+        // Update lines cleared and level
+        lines += clearedLines
+        level = (lines / 10) + 1
+        
+        // Update game speed based on level (NES formula)
+        dropInterval = (1000 * Math.pow(0.8, (level - 1).toDouble())).toLong()
     }
     
     /**

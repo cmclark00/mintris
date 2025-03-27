@@ -16,4 +16,8 @@
     <string name="sound_on">Sound: On</string>
     <string name="sound_off">Sound: Off</string>
     <string name="toggle_music">Toggle music</string>
+    <string name="high_scores">High Scores</string>
+    <string name="new_high_score">New High Score!</string>
+    <string name="save">Save</string>
+    <string name="back">Back</string>
 </resources> 

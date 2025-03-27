@@ -206,25 +206,8 @@ class GameView @JvmOverloads constructor(
         // Move the current tetromino down automatically
         gameBoard.moveDown()
         
-        // Check if lines need to be cleared
-        if (gameBoard.linesToClear.isNotEmpty()) {
-            // Trigger line clear callback for vibration
-            onLineClear?.invoke(gameBoard.linesToClear.size)
-            
-            // Trigger line clearing on a background thread to prevent UI freezes
-            Thread {
-                // Process the line clearing off the UI thread
-                gameBoard.clearLinesFromGrid()
-                
-                // Then update UI on the main thread
-                handler.post {
-                    invalidate()
-                }
-            }.start()
-        } else {
-            // Update UI with current game state
-            onGameStateChanged?.invoke(gameBoard.score, gameBoard.level, gameBoard.lines)
-        }
+        // Update UI with current game state
+        onGameStateChanged?.invoke(gameBoard.score, gameBoard.level, gameBoard.lines)
     }
     
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

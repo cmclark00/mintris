@@ -19,6 +19,8 @@ import com.mintris.game.TitleScreen
 import android.view.HapticFeedbackConstants
 import com.mintris.model.GameBoard
 import com.mintris.audio.GameMusic
+import com.mintris.model.HighScoreManager
+import android.content.Intent
 
 class MainActivity : AppCompatActivity() {
     
@@ -29,12 +31,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameBoard: GameBoard
     private lateinit var gameMusic: GameMusic
     private lateinit var titleScreen: TitleScreen
+    private lateinit var highScoreManager: HighScoreManager
     
     // Game state
     private var isSoundEnabled = true
     private var isMusicEnabled = true
     private var selectedLevel = 1
     private val maxLevel = 20
+    private var currentScore = 0
+    private var currentLevel = 1
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         gameView = binding.gameView
         titleScreen = binding.titleScreen
         gameMusic = GameMusic(this)
+        highScoreManager = HighScoreManager(this)
         
         // Set up game view
         gameView.setGameBoard(gameBoard)
@@ -151,6 +157,11 @@ class MainActivity : AppCompatActivity() {
             startGame()
         }
 
+        binding.highScoresButton.setOnClickListener {
+            gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
+            showHighScores()
+        }
+
         binding.pauseLevelUpButton.setOnClickListener {
             gameHaptics.performHapticFeedback(it, HapticFeedbackConstants.VIRTUAL_KEY)
             if (selectedLevel < maxLevel) {
@@ -193,6 +204,16 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showGameOver(score: Int) {
         binding.finalScoreText.text = getString(R.string.score) + ": " + score
+        
+        // Check if this is a high score
+        if (highScoreManager.isHighScore(score)) {
+            val intent = Intent(this, HighScoreEntryActivity::class.java).apply {
+                putExtra("score", score)
+                putExtra("level", currentLevel)
+            }
+            startActivity(intent)
+        }
+        
         binding.gameOverContainer.visibility = View.VISIBLE
         
         // Vibrate to indicate game over
@@ -313,5 +334,13 @@ class MainActivity : AppCompatActivity() {
         binding.gameOverContainer.visibility = View.GONE
         binding.pauseContainer.visibility = View.GONE
         titleScreen.visibility = View.VISIBLE
+    }
+
+    /**
+     * Show high scores
+     */
+    private fun showHighScores() {
+        val intent = Intent(this, HighScoresActivity::class.java)
+        startActivity(intent)
     }
 } 

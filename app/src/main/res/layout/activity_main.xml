@@ -190,6 +190,16 @@
             android:text="@string/restart"
             android:textColor="@color/white"
             android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/highScoresButton"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@color/transparent"
+            android:text="@string/high_scores"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
             
         <LinearLayout
             android:id="@+id/levelSelectorContainer"
