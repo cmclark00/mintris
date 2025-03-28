@@ -71,7 +71,7 @@ class GameBoard(
         }
         
         // Take the next piece from the bag
-        nextPiece = Tetromino(bag.removeFirst())
+        nextPiece = Tetromino(bag.removeAt(0))
         onNextPieceChanged?.invoke()
     }
     
