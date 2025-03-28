@@ -286,15 +286,15 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_UNLOCKED_BADGES = "unlocked_badges"
         
         // XP curve parameters
-        private const val BASE_XP = 5000.0 // Base XP for level 1 (increased from 2500)
-        private const val XP_CURVE_FACTOR = 2.2 // Exponential factor for XP curve (increased from 2.0)
+        private const val BASE_XP = 4000.0 // Base XP for level 1 (reduced from 5000)
+        private const val XP_CURVE_FACTOR = 1.9 // Exponential factor for XP curve (reduced from 2.2)
         
         // XP calculation constants
-        private const val LEVEL_MULTIPLIER = 0.1 // 10% bonus per level
-        private const val XP_PER_LINE = 10L
-        private const val TETRIS_XP_BONUS = 50L
-        private const val PERFECT_CLEAR_XP_BONUS = 200L
-        private const val TIME_XP_PER_MINUTE = 5L
+        private const val LEVEL_MULTIPLIER = 0.15 // 15% bonus per level (increased from 10%)
+        private const val XP_PER_LINE = 15L // Increased from 10
+        private const val TETRIS_XP_BONUS = 75L // Increased from 50
+        private const val PERFECT_CLEAR_XP_BONUS = 250L // Increased from 200
+        private const val TIME_XP_PER_MINUTE = 8L // Increased from 5
         
         // Theme IDs with required levels
         const val THEME_CLASSIC = "theme_classic"

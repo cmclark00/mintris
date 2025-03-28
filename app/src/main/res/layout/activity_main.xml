@@ -263,6 +263,7 @@
             android:layout_marginBottom="32dp">
 
             <TextView
+                android:id="@+id/settingsTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/settings"
@@ -347,6 +348,7 @@
                     android:gravity="center">
                     
                     <TextView
+                        android:id="@+id/selectLevelText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/select_level"
@@ -416,6 +418,7 @@
                     android:layout_marginTop="16dp">
                     
                     <TextView
+                        android:id="@+id/musicText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/music"

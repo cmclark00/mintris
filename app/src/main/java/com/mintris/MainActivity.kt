@@ -102,7 +102,16 @@ class MainActivity : AppCompatActivity() {
         // Set up theme selector
         val themeSelector = binding.themeSelector
         themeSelector.onThemeSelected = { themeId ->
+            // Apply the new theme
             applyTheme(themeId)
+            
+            // Provide haptic feedback as a cue that the theme changed
+            gameHaptics.vibrateForPieceLock()
+            
+            // Refresh the pause menu to immediately show theme changes
+            if (binding.pauseContainer.visibility == View.VISIBLE) {
+                showPauseMenu()
+            }
         }
         
         // Set up title screen
@@ -381,6 +390,38 @@ class MainActivity : AppCompatActivity() {
         binding.pauseLevelBadge.setLevel(progressionManager.getPlayerLevel())
         binding.pauseLevelBadge.setThemeColor(getThemeColor(currentTheme))
         
+        // Get theme color
+        val textColor = getThemeColor(currentTheme)
+        
+        // Apply theme color to pause container background
+        val backgroundColor = when (currentTheme) {
+            PlayerProgressionManager.THEME_CLASSIC -> Color.BLACK
+            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#0D0221")
+            PlayerProgressionManager.THEME_MONOCHROME -> Color.parseColor("#1A1A1A")
+            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#3F2832")
+            PlayerProgressionManager.THEME_MINIMALIST -> Color.WHITE
+            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#0B0C10")
+            else -> Color.BLACK
+        }
+        binding.pauseContainer.setBackgroundColor(backgroundColor)
+        
+        // Apply theme colors to buttons
+        binding.pauseStartButton.setTextColor(textColor)
+        binding.pauseRestartButton.setTextColor(textColor)
+        binding.resumeButton.setTextColor(textColor)
+        binding.highScoresButton.setTextColor(textColor)
+        binding.statsButton.setTextColor(textColor)
+        binding.pauseLevelText.setTextColor(textColor)
+        binding.pauseLevelUpButton.setTextColor(textColor)
+        binding.pauseLevelDownButton.setTextColor(textColor)
+        binding.settingsButton.setTextColor(textColor)
+        binding.musicToggle.setColorFilter(textColor)
+        
+        // Apply theme colors to text elements
+        binding.settingsTitle.setTextColor(textColor)
+        binding.selectLevelText.setTextColor(textColor)
+        binding.musicText.setTextColor(textColor)
+        
         // Update theme selector
         updateThemeSelector()
     }
@@ -566,6 +607,10 @@ class MainActivity : AppCompatActivity() {
         if (::progressionScreen.isInitialized && progressionScreen.visibility == View.VISIBLE) {
             progressionScreen.applyTheme(themeId)
         }
+        
+        // Apply theme color to the stats button
+        val textColor = getThemeColor(currentTheme)
+        binding.statsButton.setTextColor(textColor)
         
         // Update the game view to apply theme
         gameView.invalidate()

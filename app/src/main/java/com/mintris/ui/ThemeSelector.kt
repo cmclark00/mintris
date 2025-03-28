@@ -86,16 +86,18 @@ class ThemeSelector @JvmOverloads constructor(
             // Set card background color based on theme
             setCardBackgroundColor(themeInfo.primaryColor)
             
-            // Add stroke for selected theme
+            // Add more noticeable visual indicator for selected theme
             if (isSelected) {
                 setContentPadding(4, 4, 4, 4)
                 // Create a gradient drawable for the border
                 val gradientDrawable = android.graphics.drawable.GradientDrawable().apply {
                     setColor(themeInfo.primaryColor)
-                    setStroke(4, Color.WHITE)
+                    setStroke(6, Color.WHITE)  // Thicker border
                     cornerRadius = 12f
                 }
                 background = gradientDrawable
+                // Add glow effect via elevation
+                cardElevation = 12f
             }
             
             // Set card dimensions
@@ -194,9 +196,29 @@ class ThemeSelector @JvmOverloads constructor(
             card.setOnClickListener {
                 // Only trigger callback if this isn't already the selected theme
                 if (themeId != selectedTheme) {
-                    // Update visual state
-                    themeCards[selectedTheme]?.cardElevation = 2f
-                    card.cardElevation = 8f
+                    // Update previously selected card
+                    themeCards[selectedTheme]?.let { prevCard ->
+                        prevCard.cardElevation = 2f
+                        // Reset any special styling
+                        prevCard.background = null
+                        prevCard.setCardBackgroundColor(getThemes()[selectedTheme]?.primaryColor ?: Color.BLACK)
+                    }
+                    
+                    // Update visual state of newly selected card
+                    card.cardElevation = 12f
+                    
+                    // Flash animation for selection feedback
+                    val flashColor = Color.WHITE
+                    val originalColor = themeInfo.primaryColor
+                    
+                    // Create animator for flash effect
+                    val flashAnimator = android.animation.ValueAnimator.ofArgb(flashColor, originalColor)
+                    flashAnimator.duration = 300 // 300ms
+                    flashAnimator.addUpdateListener { animator ->
+                        val color = animator.animatedValue as Int
+                        card.setCardBackgroundColor(color)
+                    }
+                    flashAnimator.start()
                     
                     // Update selected theme
                     selectedTheme = themeId
