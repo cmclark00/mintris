@@ -23,19 +23,13 @@ class XPProgressBar @JvmOverloads constructor(
 
     // Paints for drawing
     private val backgroundPaint = Paint().apply {
-        color = Color.parseColor("#383838")
+        color = Color.BLACK
         isAntiAlias = true
     }
     
     private val progressPaint = Paint().apply {
-        color = Color.parseColor("#50C878") // Emerald green
+        color = Color.WHITE
         isAntiAlias = true
-    }
-    
-    private val progressGlowPaint = Paint().apply {
-        color = Color.parseColor("#70F098") // Lighter emerald for glow
-        isAntiAlias = true
-        setShadowLayer(10f, 0f, 0f, Color.parseColor("#50C878"))
     }
     
     private val textPaint = Paint().apply {
@@ -46,7 +40,7 @@ class XPProgressBar @JvmOverloads constructor(
     }
     
     private val levelBadgePaint = Paint().apply {
-        color = Color.parseColor("#FFD700") // Gold color for level badge
+        color = Color.WHITE
         isAntiAlias = true
     }
     
@@ -77,6 +71,9 @@ class XPProgressBar @JvmOverloads constructor(
     private var isLevelingUp = false
     private var levelUpAnimator: ValueAnimator? = null
     private var levelBadgeScale = 1f
+
+    // Theme-related properties
+    private var themeColor = Color.WHITE
     
     /**
      * Set the player's current level and XP values
@@ -94,6 +91,15 @@ class XPProgressBar @JvmOverloads constructor(
             currentProgress = targetProgress
         }
         
+        invalidate()
+    }
+
+    /**
+     * Set theme color for elements
+     */
+    fun setThemeColor(color: Int) {
+        themeColor = color
+        levelBadgePaint.color = color
         invalidate()
     }
     
@@ -173,8 +179,9 @@ class XPProgressBar @JvmOverloads constructor(
         
         // Update progress bar dimensions based on view size
         val verticalPadding = h * 0.2f
+        // Increase left margin to prevent level badge from being cut off
         backgroundRect.set(
-            h * 0.5f,  // Left margin = height/2 (for level badge)
+            h * 0.6f,  // Increased from 0.5f to 0.6f for more space
             verticalPadding,
             w - paddingRight.toFloat(),
             h - verticalPadding
@@ -188,9 +195,9 @@ class XPProgressBar @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         
-        // Draw level badge
+        // Draw level badge with adjusted position
         val badgeRadius = height * 0.3f * levelBadgeScale
-        val badgeCenterX = height * 0.25f
+        val badgeCenterX = height * 0.35f  // Adjusted from 0.25f to 0.35f to match new position
         val badgeCenterY = height * 0.5f
         
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, levelBadgePaint)
@@ -214,9 +221,6 @@ class XPProgressBar @JvmOverloads constructor(
         
         // Only draw if there is progress to show
         if (progressRect.width() > 0) {
-            // Draw glow effect first
-            canvas.drawRoundRect(progressRect, cornerRadius, cornerRadius, progressGlowPaint)
-            
             // Draw actual progress bar
             canvas.drawRoundRect(progressRect, cornerRadius, cornerRadius, progressPaint)
         }

@@ -322,31 +322,43 @@ class MainActivity : AppCompatActivity() {
         // Show progression screen first with XP animation
         binding.gameOverContainer.visibility = View.GONE
         progressionScreen.visibility = View.VISIBLE
-        progressionScreen.showProgress(progressionManager, xpGained, newRewards)
+        progressionScreen.applyTheme(currentTheme)
+        progressionScreen.showProgress(progressionManager, xpGained, newRewards, currentTheme)
         
         // Override the continue button behavior if high score needs to be shown
         val originalOnContinue = progressionScreen.onContinue
         
-        // Check if this is a high score
-        if (highScoreManager.isHighScore(score)) {
-            showingHighScore = true
-            
-            // Set a special onContinue that launches high score entry
-            progressionScreen.onContinue = {
-                val intent = Intent(this, HighScoreEntryActivity::class.java).apply {
-                    putExtra("score", score)
-                    putExtra("level", currentLevel)
-                }
-                // Use the launcher instead of startActivity
-                highScoreEntryLauncher.launch(intent)
+        progressionScreen.onContinue = {
+            // If this is a high score, show high score entry screen
+            if (highScoreManager.isHighScore(score)) {
+                showingHighScore = true
+                showHighScoreEntry(score)
+            } else {
+                // Just show game over screen normally
+                progressionScreen.visibility = View.GONE
+                binding.gameOverContainer.visibility = View.VISIBLE
                 
-                // Restore original onContinue for next time
-                progressionScreen.onContinue = originalOnContinue
+                // Update theme selector if new themes were unlocked
+                if (newRewards.any { it.contains("Theme") }) {
+                    updateThemeSelector()
+                }
             }
         }
         
         // Vibrate to indicate game over
         vibrate(VibrationEffect.EFFECT_DOUBLE_CLICK)
+    }
+    
+    /**
+     * Show high score entry screen
+     */
+    private fun showHighScoreEntry(score: Int) {
+        val intent = Intent(this, HighScoreEntryActivity::class.java).apply {
+            putExtra("score", score)
+            putExtra("level", currentLevel)
+        }
+        // Use the launcher instead of startActivity
+        highScoreEntryLauncher.launch(intent)
     }
     
     /**
@@ -364,6 +376,10 @@ class MainActivity : AppCompatActivity() {
         binding.pauseContainer.visibility = View.VISIBLE
         binding.pauseStartButton.visibility = View.VISIBLE
         binding.resumeButton.visibility = View.GONE
+        
+        // Update level badge
+        binding.pauseLevelBadge.setLevel(progressionManager.getPlayerLevel())
+        binding.pauseLevelBadge.setThemeColor(getThemeColor(currentTheme))
         
         // Update theme selector
         updateThemeSelector()
@@ -490,8 +506,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun updateThemeSelector() {
         binding.themeSelector.updateThemes(
-            progressionManager.getUnlockedThemes(),
-            currentTheme
+            unlockedThemes = progressionManager.getUnlockedThemes(),
+            currentTheme = currentTheme
         )
     }
     
@@ -540,6 +556,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        // Apply theme to progression screen if it's visible and initialized
+        if (::progressionScreen.isInitialized && progressionScreen.visibility == View.VISIBLE) {
+            progressionScreen.applyTheme(themeId)
+        }
+        
         // Update the game view to apply theme
         gameView.invalidate()
     }
@@ -558,5 +579,20 @@ class MainActivity : AppCompatActivity() {
     private fun loadThemePreference(): String {
         val prefs = getSharedPreferences("mintris_settings", Context.MODE_PRIVATE)
         return prefs.getString("selected_theme", PlayerProgressionManager.THEME_CLASSIC) ?: PlayerProgressionManager.THEME_CLASSIC
+    }
+
+    /**
+     * Get the appropriate color for the current theme
+     */
+    private fun getThemeColor(themeId: String): Int {
+        return when (themeId) {
+            PlayerProgressionManager.THEME_CLASSIC -> Color.WHITE
+            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#FF00FF")
+            PlayerProgressionManager.THEME_MONOCHROME -> Color.LTGRAY
+            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#FF5A5F")
+            PlayerProgressionManager.THEME_MINIMALIST -> Color.BLACK
+            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#66FCF1")
+            else -> Color.WHITE
+        }
     }
 } 
