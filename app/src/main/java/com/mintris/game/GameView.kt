@@ -133,6 +133,10 @@ class GameView @JvmOverloads constructor(
     private var lastTapTime = 0L
     private var lastRotationTime = 0L
     private var lastMoveTime = 0L
+    private var lastHardDropTime = 0L  // Track when the last hard drop occurred
+    private val hardDropCooldown = 250L  // Reduced from 500ms to 250ms
+    private var touchFreezeUntil = 0L  // Time until which touch events should be ignored
+    private val pieceLockFreezeTime = 300L  // Time to freeze touch events after piece locks
     private var minSwipeVelocity = 1200  // Increased from 800 to require more deliberate swipes
     private val maxTapMovement = 20f    // Maximum movement allowed for a tap (in pixels)
     private val minTapTime = 100L       // Minimum time for a tap (in milliseconds)
@@ -171,7 +175,12 @@ class GameView @JvmOverloads constructor(
         
         // Connect our callbacks to the GameBoard
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
-        gameBoard.onPieceLock = { onPieceLock?.invoke() }
+        gameBoard.onPieceLock = { 
+            // Freeze touch events for a brief period after a piece locks
+            touchFreezeUntil = System.currentTimeMillis() + pieceLockFreezeTime
+            Log.d(TAG, "Piece locked - freezing touch events until ${touchFreezeUntil}")
+            onPieceLock?.invoke() 
+        }
         gameBoard.onLineClear = { lineCount, clearedLines -> 
             Log.d(TAG, "Received line clear from GameBoard: $lineCount lines")
             try {
@@ -697,6 +706,13 @@ class GameView @JvmOverloads constructor(
             return true
         }
         
+        // Ignore touch events during the freeze period after a piece locks
+        val currentTime = System.currentTimeMillis()
+        if (currentTime < touchFreezeUntil) {
+            Log.d(TAG, "Ignoring touch event - freeze active for ${touchFreezeUntil - currentTime}ms more")
+            return true
+        }
+        
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // Record start of touch
@@ -781,21 +797,34 @@ class GameView @JvmOverloads constructor(
                 val moveTime = System.currentTimeMillis() - lastTapTime
                 val deltaY = event.y - startY
                 val deltaX = event.x - startX
+                val currentTime = System.currentTimeMillis()
                 
-                // Only allow hard drops with a deliberate downward swipe
-                // Requires: predominantly vertical movement, minimum distance, and minimum velocity
-                if (moveTime > 0 && 
-                    deltaY > blockSize * minHardDropDistance && // Require longer swipe for hard drop
+                // Check if this might have been a hard drop gesture
+                val isVerticalSwipe = moveTime > 0 && 
+                    deltaY > blockSize * minHardDropDistance && 
                     (deltaY / moveTime) * 1000 > minSwipeVelocity && 
-                    abs(deltaX) < abs(deltaY) * 0.3f) { // Require more purely vertical movement (reduced from 0.5f to 0.3f)
-                    gameBoard.hardDrop()
-                    invalidate()
+                    abs(deltaX) < abs(deltaY) * 0.3f
+                
+                // Check cooldown separately for better logging
+                val isCooldownActive = currentTime - lastHardDropTime <= hardDropCooldown
+                
+                if (isVerticalSwipe) {
+                    if (isCooldownActive) {
+                        // Log when we're blocking a hard drop due to cooldown
+                        Log.d("GameView", "Hard drop blocked by cooldown - time since last: ${currentTime - lastHardDropTime}ms, cooldown: ${hardDropCooldown}ms")
+                    } else {
+                        // Process the hard drop
+                        Log.d("GameView", "Hard drop detected - deltaY: $deltaY, velocity: ${(deltaY / moveTime) * 1000}, ratio: ${abs(deltaX) / abs(deltaY)}")
+                        gameBoard.hardDrop()
+                        lastHardDropTime = currentTime  // Update the last hard drop time
+                        invalidate()
+                    }
                 } else if (moveTime < minTapTime && 
                          abs(deltaY) < maxTapMovement && 
                          abs(deltaX) < maxTapMovement) {
                     // Quick tap with minimal movement (rotation)
-                    val currentTime = System.currentTimeMillis()
                     if (currentTime - lastRotationTime >= rotationCooldown) {
+                        Log.d("GameView", "Rotation detected")
                         gameBoard.rotate()
                         lastRotationTime = currentTime
                         invalidate()

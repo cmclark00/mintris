@@ -63,6 +63,10 @@ class GameBoard(
     // Store the last cleared lines
     private val lastClearedLines = mutableListOf<Int>()
     
+    // Add spawn protection variables
+    private var pieceSpawnTime = 0L
+    private val spawnGracePeriod = 250L  // Changed from 150ms to 250ms
+    
     init {
         spawnNextPiece()
         spawnPiece()
@@ -122,6 +126,8 @@ class GameBoard(
      * Spawns the current tetromino at the top of the board
      */
     fun spawnPiece() {
+        Log.d(TAG, "spawnPiece() started - current states: isHardDropInProgress=$isHardDropInProgress, isPieceLocking=$isPieceLocking")
+        
         currentPiece = nextPiece
         spawnNextPiece()
         
@@ -130,9 +136,15 @@ class GameBoard(
             x = (width - getWidth()) / 2
             y = 0
             
+            Log.d(TAG, "spawnPiece() - new piece spawned at position (${x},${y}), type=${type}")
+            
+            // Set the spawn time for the grace period
+            pieceSpawnTime = System.currentTimeMillis()
+            
             // Check if the piece can be placed (Game Over condition)
             if (!canMove(0, 0)) {
                 isGameOver = true
+                Log.d(TAG, "spawnPiece() - Game Over condition detected")
             }
         }
     }
@@ -173,6 +185,13 @@ class GameBoard(
             onPieceMove?.invoke()
             true
         } else {
+            // Check if we're within the spawn grace period
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - pieceSpawnTime < spawnGracePeriod) {
+                Log.d(TAG, "moveDown() - not locking piece due to spawn grace period (${currentTime - pieceSpawnTime}ms < ${spawnGracePeriod}ms)")
+                return false
+            }
+            
             lockPiece()
             false
         }
@@ -191,8 +210,19 @@ class GameBoard(
      * Hard drop the current piece
      */
     fun hardDrop() {
-        if (isHardDropInProgress || isPieceLocking) return  // Prevent multiple hard drops
+        if (isHardDropInProgress || isPieceLocking) {
+            Log.d(TAG, "hardDrop() called but blocked: isHardDropInProgress=$isHardDropInProgress, isPieceLocking=$isPieceLocking")
+            return  // Prevent multiple hard drops
+        }
         
+        // Check if we're within the spawn grace period
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - pieceSpawnTime < spawnGracePeriod) {
+            Log.d(TAG, "hardDrop() - blocked due to spawn grace period (${currentTime - pieceSpawnTime}ms < ${spawnGracePeriod}ms)")
+            return
+        }
+        
+        Log.d(TAG, "hardDrop() started - setting isHardDropInProgress=true")
         isHardDropInProgress = true
         val piece = currentPiece ?: return
         
@@ -202,11 +232,15 @@ class GameBoard(
             dropDistance++
         }
         
+        Log.d(TAG, "hardDrop() - piece will drop $dropDistance cells, position before: (${piece.x},${piece.y})")
+        
         // Move piece down until it can't move anymore
         while (canMove(0, 1)) {
             piece.y++
             onPieceMove?.invoke()
         }
+        
+        Log.d(TAG, "hardDrop() - piece final position: (${piece.x},${piece.y})")
         
         // Add hard drop points (2 points per cell)
         score += dropDistance * 2
@@ -298,7 +332,12 @@ class GameBoard(
      * Lock the current piece in place
      */
     private fun lockPiece() {
-        if (isPieceLocking) return  // Prevent recursive locking
+        if (isPieceLocking) {
+            Log.d(TAG, "lockPiece() called but blocked: isPieceLocking=$isPieceLocking")
+            return  // Prevent recursive locking
+        }
+        
+        Log.d(TAG, "lockPiece() started - setting isPieceLocking=true, current isHardDropInProgress=$isHardDropInProgress")
         isPieceLocking = true
         
         val piece = currentPiece ?: return
@@ -324,15 +363,25 @@ class GameBoard(
         // Find and clear lines immediately
         findAndClearLines()
         
+        // IMPORTANT: Reset the hard drop flag before spawning a new piece
+        // This prevents the immediate hard drop of the next piece
+        if (isHardDropInProgress) {
+            Log.d(TAG, "lockPiece() - resetting isHardDropInProgress=false BEFORE spawning new piece")
+            isHardDropInProgress = false
+        }
+        
+        // Log piece position before spawning new piece
+        Log.d(TAG, "lockPiece() - about to spawn new piece at y=${piece.y}, isHardDropInProgress=$isHardDropInProgress")
+        
         // Spawn new piece immediately
         spawnPiece()
         
         // Allow holding piece again after locking
         canHold = true
         
-        // Reset both states after everything is done
+        // Reset locking state
         isPieceLocking = false
-        isHardDropInProgress = false
+        Log.d(TAG, "lockPiece() completed - reset flags: isPieceLocking=false, isHardDropInProgress=$isHardDropInProgress")
     }
     
     /**
