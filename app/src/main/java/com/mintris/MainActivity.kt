@@ -1,6 +1,9 @@
 package com.mintris
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -11,6 +14,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.mintris.databinding.ActivityMainBinding
 import com.mintris.game.GameHaptics
 import com.mintris.game.GameView
@@ -20,10 +24,14 @@ import android.view.HapticFeedbackConstants
 import com.mintris.model.GameBoard
 import com.mintris.audio.GameMusic
 import com.mintris.model.HighScoreManager
-import android.content.Intent
+import com.mintris.model.PlayerProgressionManager
 import com.mintris.model.StatsManager
+import com.mintris.ui.ProgressionScreen
 import java.text.SimpleDateFormat
 import java.util.*
+import android.graphics.Color
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 
 class MainActivity : AppCompatActivity() {
     
@@ -36,6 +44,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var titleScreen: TitleScreen
     private lateinit var highScoreManager: HighScoreManager
     private lateinit var statsManager: StatsManager
+    private lateinit var progressionManager: PlayerProgressionManager
+    private lateinit var progressionScreen: ProgressionScreen
     
     // Game state
     private var isSoundEnabled = true
@@ -46,8 +56,19 @@ class MainActivity : AppCompatActivity() {
     private var currentLevel = 1
     private var gameStartTime: Long = 0
     private var piecesPlaced: Int = 0
+    private var currentTheme = PlayerProgressionManager.THEME_CLASSIC
+    
+    // Activity result launcher for high score entry
+    private lateinit var highScoreEntryLauncher: ActivityResultLauncher<Intent>
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Register activity result launcher for high score entry
+        highScoreEntryLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // No matter what the result is, we just show the game over container
+            progressionScreen.visibility = View.GONE
+            binding.gameOverContainer.visibility = View.VISIBLE
+        }
+        
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -60,10 +81,29 @@ class MainActivity : AppCompatActivity() {
         gameMusic = GameMusic(this)
         highScoreManager = HighScoreManager(this)
         statsManager = StatsManager(this)
+        progressionManager = PlayerProgressionManager(this)
+        
+        // Load and apply theme preference
+        currentTheme = loadThemePreference()
+        applyTheme(currentTheme)
         
         // Set up game view
         gameView.setGameBoard(gameBoard)
         gameView.setHaptics(gameHaptics)
+        
+        // Set up progression screen
+        progressionScreen = binding.progressionScreen
+        progressionScreen.visibility = View.GONE
+        progressionScreen.onContinue = {
+            progressionScreen.visibility = View.GONE
+            binding.gameOverContainer.visibility = View.VISIBLE
+        }
+        
+        // Set up theme selector
+        val themeSelector = binding.themeSelector
+        themeSelector.onThemeSelected = { themeId ->
+            applyTheme(themeId)
+        }
         
         // Set up title screen
         titleScreen.onStartGame = {
@@ -244,6 +284,19 @@ class MainActivity : AppCompatActivity() {
             level = currentLevel
         )
         
+        // Calculate XP earned
+        val xpGained = progressionManager.calculateGameXP(
+            score = score,
+            lines = gameBoard.lines,
+            level = currentLevel,
+            gameTime = gameTime,
+            tetrisCount = statsManager.getSessionTetrises(),
+            perfectClearCount = 0 // Implement perfect clear tracking if needed
+        )
+        
+        // Add XP and check for rewards
+        val newRewards = progressionManager.addXP(xpGained)
+        
         // End session and save stats
         statsManager.endSession()
         
@@ -263,16 +316,34 @@ class MainActivity : AppCompatActivity() {
         binding.sessionTriplesText.text = getString(R.string.triples, statsManager.getSessionTriples())
         binding.sessionTetrisesText.text = getString(R.string.tetrises, statsManager.getSessionTetrises())
         
+        // Flag to track if high score screen will be shown
+        var showingHighScore = false
+        
+        // Show progression screen first with XP animation
+        binding.gameOverContainer.visibility = View.GONE
+        progressionScreen.visibility = View.VISIBLE
+        progressionScreen.showProgress(progressionManager, xpGained, newRewards)
+        
+        // Override the continue button behavior if high score needs to be shown
+        val originalOnContinue = progressionScreen.onContinue
+        
         // Check if this is a high score
         if (highScoreManager.isHighScore(score)) {
-            val intent = Intent(this, HighScoreEntryActivity::class.java).apply {
-                putExtra("score", score)
-                putExtra("level", currentLevel)
+            showingHighScore = true
+            
+            // Set a special onContinue that launches high score entry
+            progressionScreen.onContinue = {
+                val intent = Intent(this, HighScoreEntryActivity::class.java).apply {
+                    putExtra("score", score)
+                    putExtra("level", currentLevel)
+                }
+                // Use the launcher instead of startActivity
+                highScoreEntryLauncher.launch(intent)
+                
+                // Restore original onContinue for next time
+                progressionScreen.onContinue = originalOnContinue
             }
-            startActivity(intent)
         }
-        
-        binding.gameOverContainer.visibility = View.VISIBLE
         
         // Vibrate to indicate game over
         vibrate(VibrationEffect.EFFECT_DOUBLE_CLICK)
@@ -283,6 +354,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun hideGameOver() {
         binding.gameOverContainer.visibility = View.GONE
+        progressionScreen.visibility = View.GONE
     }
     
     /**
@@ -292,6 +364,9 @@ class MainActivity : AppCompatActivity() {
         binding.pauseContainer.visibility = View.VISIBLE
         binding.pauseStartButton.visibility = View.VISIBLE
         binding.resumeButton.visibility = View.GONE
+        
+        // Update theme selector
+        updateThemeSelector()
     }
     
     /**
@@ -346,6 +421,7 @@ class MainActivity : AppCompatActivity() {
         gameStartTime = System.currentTimeMillis()
         piecesPlaced = 0
         statsManager.startNewSession()
+        progressionManager.startNewSession()
         gameBoard.updateLevel(selectedLevel)
     }
     
@@ -379,6 +455,9 @@ class MainActivity : AppCompatActivity() {
         if (titleScreen.visibility == View.GONE && gameView.visibility == View.VISIBLE && binding.gameOverContainer.visibility == View.GONE && binding.pauseContainer.visibility == View.GONE) {
             resumeGame()
         }
+        
+        // Update theme selector with available themes when pause screen appears
+        updateThemeSelector()
     }
     
     override fun onDestroy() {
@@ -404,5 +483,80 @@ class MainActivity : AppCompatActivity() {
     private fun showHighScores() {
         val intent = Intent(this, HighScoresActivity::class.java)
         startActivity(intent)
+    }
+    
+    /**
+     * Update the theme selector with unlocked themes
+     */
+    private fun updateThemeSelector() {
+        binding.themeSelector.updateThemes(
+            progressionManager.getUnlockedThemes(),
+            currentTheme
+        )
+    }
+    
+    /**
+     * Apply a theme to the game
+     */
+    private fun applyTheme(themeId: String) {
+        // Only apply if the theme is unlocked
+        if (!progressionManager.isThemeUnlocked(themeId)) return
+        
+        // Save the selected theme
+        currentTheme = themeId
+        saveThemePreference(themeId)
+        
+        // Apply theme colors based on theme ID
+        when (themeId) {
+            PlayerProgressionManager.THEME_CLASSIC -> {
+                // Default black theme
+                binding.root.setBackgroundColor(Color.BLACK)
+            }
+            PlayerProgressionManager.THEME_NEON -> {
+                // Neon theme with dark purple background
+                binding.root.setBackgroundColor(Color.parseColor("#0D0221"))
+            }
+            PlayerProgressionManager.THEME_MONOCHROME -> {
+                // Monochrome dark gray
+                binding.root.setBackgroundColor(Color.parseColor("#1A1A1A"))
+            }
+            PlayerProgressionManager.THEME_RETRO -> {
+                // Retro arcade theme
+                binding.root.setBackgroundColor(Color.parseColor("#3F2832"))
+            }
+            PlayerProgressionManager.THEME_MINIMALIST -> {
+                // Minimalist white theme
+                binding.root.setBackgroundColor(Color.WHITE)
+                
+                // Update text colors for visibility
+                binding.scoreText.setTextColor(Color.BLACK)
+                binding.currentLevelText.setTextColor(Color.BLACK)
+                binding.linesText.setTextColor(Color.BLACK)
+                binding.comboText.setTextColor(Color.BLACK)
+            }
+            PlayerProgressionManager.THEME_GALAXY -> {
+                // Galaxy dark blue theme
+                binding.root.setBackgroundColor(Color.parseColor("#0B0C10"))
+            }
+        }
+        
+        // Update the game view to apply theme
+        gameView.invalidate()
+    }
+    
+    /**
+     * Save the selected theme in preferences
+     */
+    private fun saveThemePreference(themeId: String) {
+        val prefs = getSharedPreferences("mintris_settings", Context.MODE_PRIVATE)
+        prefs.edit().putString("selected_theme", themeId).apply()
+    }
+    
+    /**
+     * Load the saved theme preference
+     */
+    private fun loadThemePreference(): String {
+        val prefs = getSharedPreferences("mintris_settings", Context.MODE_PRIVATE)
+        return prefs.getString("selected_theme", PlayerProgressionManager.THEME_CLASSIC) ?: PlayerProgressionManager.THEME_CLASSIC
     }
 } 

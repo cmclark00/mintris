@@ -1,5 +1,6 @@
 package com.mintris
 
+import android.app.Activity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -13,6 +14,9 @@ class HighScoreEntryActivity : AppCompatActivity() {
     private lateinit var nameInput: EditText
     private lateinit var scoreText: TextView
     private lateinit var saveButton: Button
+    
+    // Track if we already saved to prevent double-saving
+    private var hasSaved = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,12 +32,28 @@ class HighScoreEntryActivity : AppCompatActivity() {
         scoreText.text = getString(R.string.score) + ": $score"
 
         saveButton.setOnClickListener {
-            val name = nameInput.text.toString().trim()
-            if (name.isNotEmpty()) {
-                val highScore = HighScore(name, score, level)
-                highScoreManager.addHighScore(highScore)
-                finish()
+            // Only allow saving once
+            if (!hasSaved) {
+                val name = nameInput.text.toString().trim()
+                if (name.isNotEmpty()) {
+                    hasSaved = true
+                    val highScore = HighScore(name, score, level)
+                    highScoreManager.addHighScore(highScore)
+                    
+                    // Set result and finish
+                    setResult(Activity.RESULT_OK)
+                    finish()
+                }
             }
         }
+    }
+    
+    // Prevent accidental back button press from causing issues
+    override fun onBackPressed() {
+        // If they haven't saved yet, consider it a cancel
+        if (!hasSaved) {
+            setResult(Activity.RESULT_CANCELED)
+        }
+        finish()
     }
 } 
