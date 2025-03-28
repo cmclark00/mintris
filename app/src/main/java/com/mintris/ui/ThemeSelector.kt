@@ -105,6 +105,14 @@ class ThemeSelector @JvmOverloads constructor(
             }
         }
         
+        // Create theme content container
+        val container = FrameLayout(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+        
         // Create the theme preview
         val themePreview = View(context).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -133,6 +141,23 @@ class ThemeSelector @JvmOverloads constructor(
             }
         }
         
+        // Add level requirement for locked themes
+        val levelRequirement = TextView(context).apply {
+            text = "Level ${themeInfo.unlockLevel}"
+            setTextColor(Color.WHITE)
+            textSize = 12f
+            textAlignment = View.TEXT_ALIGNMENT_CENTER
+            visibility = if (isUnlocked) View.GONE else View.VISIBLE
+            
+            // Position at the center of the card
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+            }
+        }
+        
         // Add a lock icon if the theme is locked
         val lockOverlay = View(context).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -145,10 +170,14 @@ class ThemeSelector @JvmOverloads constructor(
             visibility = if (isUnlocked) View.GONE else View.VISIBLE
         }
         
-        // Add all elements to the card
-        card.addView(themePreview)
-        card.addView(themeLabel)
-        card.addView(lockOverlay)
+        // Add all elements to container
+        container.addView(themePreview)
+        container.addView(themeLabel)
+        container.addView(lockOverlay)
+        container.addView(levelRequirement)
+        
+        // Add container to card
+        card.addView(container)
         
         // Set up click listener only for unlocked themes
         if (isUnlocked) {

@@ -130,25 +130,25 @@ class ProgressionScreen @JvmOverloads constructor(
      */
     private fun createRewardCard(rewardText: String): CardView {
         val card = CardView(context).apply {
-            radius = 16f
-            cardElevation = 8f
+            radius = 0f
+            cardElevation = 0f
             useCompatPadding = true
-            setCardBackgroundColor(Color.parseColor("#FFD700")) // Gold background
+            setCardBackgroundColor(Color.TRANSPARENT)
             
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(16, 16, 16, 16)
+                setMargins(16, 8, 16, 8)
             }
         }
         
         // Add reward text
         val textView = TextView(context).apply {
             text = rewardText
-            setTextColor(Color.BLACK)
+            setTextColor(Color.WHITE)
             textSize = 18f
-            setPadding(32, 24, 32, 24)
+            setPadding(16, 12, 16, 12)
             textAlignment = View.TEXT_ALIGNMENT_CENTER
         }
         

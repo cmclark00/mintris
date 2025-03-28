@@ -286,8 +286,8 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_UNLOCKED_BADGES = "unlocked_badges"
         
         // XP curve parameters
-        private const val BASE_XP = 1000.0 // Base XP for level 1
-        private const val XP_CURVE_FACTOR = 1.5 // Exponential factor for XP curve
+        private const val BASE_XP = 2500.0 // Base XP for level 1 (increased from 1000)
+        private const val XP_CURVE_FACTOR = 2.0 // Exponential factor for XP curve (increased from 1.5)
         
         // XP calculation constants
         private const val LEVEL_MULTIPLIER = 0.1 // 10% bonus per level
@@ -296,7 +296,7 @@ class PlayerProgressionManager(context: Context) {
         private const val PERFECT_CLEAR_XP_BONUS = 200L
         private const val TIME_XP_PER_MINUTE = 5L
         
-        // Theme IDs
+        // Theme IDs with required levels
         const val THEME_CLASSIC = "theme_classic"
         const val THEME_NEON = "theme_neon"
         const val THEME_MONOCHROME = "theme_monochrome"
@@ -304,10 +304,42 @@ class PlayerProgressionManager(context: Context) {
         const val THEME_MINIMALIST = "theme_minimalist"
         const val THEME_GALAXY = "theme_galaxy"
         
+        // Map of themes to required levels
+        val THEME_REQUIRED_LEVELS = mapOf(
+            THEME_CLASSIC to 1,
+            THEME_NEON to 5,
+            THEME_MONOCHROME to 10,
+            THEME_RETRO to 15,
+            THEME_MINIMALIST to 20,
+            THEME_GALAXY to 25
+        )
+        
         // Power IDs
         const val POWER_FREEZE_TIME = "power_freeze_time"
         const val POWER_BLOCK_SWAP = "power_block_swap"
         const val POWER_SAFE_LANDING = "power_safe_landing"
         const val POWER_PERFECT_CLEAR = "power_perfect_clear"
+        
+        // Map of powers to required levels
+        val POWER_REQUIRED_LEVELS = mapOf(
+            POWER_FREEZE_TIME to 8,
+            POWER_BLOCK_SWAP to 12,
+            POWER_SAFE_LANDING to 18,
+            POWER_PERFECT_CLEAR to 30
+        )
+    }
+    
+    /**
+     * Get the required level for a specific theme
+     */
+    fun getRequiredLevelForTheme(themeId: String): Int {
+        return THEME_REQUIRED_LEVELS[themeId] ?: 1
+    }
+    
+    /**
+     * Get the required level for a specific power
+     */
+    fun getRequiredLevelForPower(powerId: String): Int {
+        return POWER_REQUIRED_LEVELS[powerId] ?: 1
     }
 } 
