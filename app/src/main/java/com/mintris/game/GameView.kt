@@ -173,6 +173,10 @@ class GameView @JvmOverloads constructor(
         // Start with paused state
         pause()
         
+        // Load saved block skin
+        val prefs = context.getSharedPreferences("mintris_progression", Context.MODE_PRIVATE)
+        currentBlockSkin = prefs.getString("selected_block_skin", "block_skin_1") ?: "block_skin_1"
+        
         // Connect our callbacks to the GameBoard
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { 
@@ -269,6 +273,9 @@ class GameView @JvmOverloads constructor(
      */
     fun setBlockSkin(skinId: String) {
         currentBlockSkin = skinId
+        // Save the selection to SharedPreferences
+        val prefs = context.getSharedPreferences("mintris_progression", Context.MODE_PRIVATE)
+        prefs.edit().putString("selected_block_skin", skinId).commit()
         invalidate()
     }
     

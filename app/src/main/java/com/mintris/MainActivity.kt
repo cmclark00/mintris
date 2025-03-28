@@ -98,6 +98,13 @@ class MainActivity : AppCompatActivity() {
         // Load and apply block skin preference
         gameView.setBlockSkin(progressionManager.getSelectedBlockSkin())
         
+        // Update block skin selector with current selection
+        blockSkinSelector.updateBlockSkins(
+            progressionManager.getUnlockedBlocks(),
+            gameView.getCurrentBlockSkin(),
+            progressionManager.getPlayerLevel()
+        )
+        
         // Set up game view
         gameView.setGameBoard(gameBoard)
         gameView.setHaptics(gameHaptics)

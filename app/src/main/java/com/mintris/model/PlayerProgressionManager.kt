@@ -281,21 +281,19 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_UNLOCKED_THEMES = "unlocked_themes"
         private const val KEY_UNLOCKED_BLOCKS = "unlocked_blocks"
         private const val KEY_UNLOCKED_BADGES = "unlocked_badges"
-        private const val KEY_SELECTED_BLOCK_SKIN = "selected_block_skin"
         private const val KEY_SELECTED_THEME = "selected_theme"
+        private const val KEY_SELECTED_BLOCK_SKIN = "selected_block_skin"
         
-        // XP curve parameters
-        private const val BASE_XP = 4000.0 // Base XP for level 1 (reduced from 5000)
-        private const val XP_CURVE_FACTOR = 1.9 // Exponential factor for XP curve (reduced from 2.2)
+        // XP constants
+        private const val BASE_XP = 1000L
+        private const val XP_CURVE_FACTOR = 1.5
+        private const val LEVEL_MULTIPLIER = 0.1
+        private const val XP_PER_LINE = 100L
+        private const val TETRIS_XP_BONUS = 500L
+        private const val PERFECT_CLEAR_XP_BONUS = 1000L
+        private const val TIME_XP_PER_MINUTE = 50L
         
-        // XP calculation constants
-        private const val LEVEL_MULTIPLIER = 0.15 // 15% bonus per level (increased from 10%)
-        private const val XP_PER_LINE = 15L // Increased from 10
-        private const val TETRIS_XP_BONUS = 75L // Increased from 50
-        private const val PERFECT_CLEAR_XP_BONUS = 250L // Increased from 200
-        private const val TIME_XP_PER_MINUTE = 8L // Increased from 5
-        
-        // Theme IDs with required levels
+        // Theme constants
         const val THEME_CLASSIC = "theme_classic"
         const val THEME_NEON = "theme_neon"
         const val THEME_MONOCHROME = "theme_monochrome"
@@ -326,7 +324,7 @@ class PlayerProgressionManager(context: Context) {
      */
     fun setSelectedBlockSkin(skinId: String) {
         if (unlockedBlocks.contains(skinId)) {
-            prefs.edit().putString(KEY_SELECTED_BLOCK_SKIN, skinId).apply()
+            prefs.edit().putString(KEY_SELECTED_BLOCK_SKIN, skinId).commit()
         }
     }
     
