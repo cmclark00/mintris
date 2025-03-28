@@ -12,12 +12,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
-import android.view.WindowManager
-import android.view.Display
 import android.hardware.display.DisplayManager
+import android.view.Display
 import com.mintris.model.GameBoard
 import com.mintris.model.Tetromino
 import com.mintris.model.TetrominoType
@@ -32,6 +32,10 @@ class GameView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
+
+    companion object {
+        private const val TAG = "GameView"
+    }
 
     // Game board model
     private var gameBoard = GameBoard()
@@ -165,17 +169,17 @@ class GameView @JvmOverloads constructor(
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { onPieceLock?.invoke() }
         gameBoard.onLineClear = { lineCount, clearedLines -> 
-            android.util.Log.d("GameView", "Received line clear from GameBoard: $lineCount lines")
+            Log.d(TAG, "Received line clear from GameBoard: $lineCount lines")
             try {
                 onLineClear?.invoke(lineCount)
                 // Use the lines that were cleared directly
                 linesToPulse.clear()
                 linesToPulse.addAll(clearedLines)
-                android.util.Log.d("GameView", "Found ${linesToPulse.size} lines to pulse")
+                Log.d(TAG, "Found ${linesToPulse.size} lines to pulse")
                 startPulseAnimation(lineCount)
-                android.util.Log.d("GameView", "Forwarded line clear callback")
+                Log.d(TAG, "Forwarded line clear callback")
             } catch (e: Exception) {
-                android.util.Log.e("GameView", "Error forwarding line clear callback", e)
+                Log.e(TAG, "Error forwarding line clear callback", e)
             }
         }
         
@@ -184,7 +188,11 @@ class GameView @JvmOverloads constructor(
         
         // Set better frame rate using modern APIs
         val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        } else {
+            displayManager.displays.firstOrNull()
+        }
         display?.let { disp ->
             val refreshRate = disp.refreshRate
             // Set game loop interval based on refresh rate, but don't go faster than the base interval
@@ -289,7 +297,7 @@ class GameView @JvmOverloads constructor(
         val totalHeight = blockSize * verticalBlocks
         
         // Log dimensions for debugging
-        android.util.Log.d("GameView", "Board dimensions: width=$width, height=$height, blockSize=$blockSize, boardLeft=$boardLeft, boardTop=$boardTop, totalHeight=$totalHeight")
+        Log.d(TAG, "Board dimensions: width=$width, height=$height, blockSize=$blockSize, boardLeft=$boardLeft, boardTop=$boardTop, totalHeight=$totalHeight")
     }
     
     override fun onDraw(canvas: Canvas) {
@@ -739,17 +747,17 @@ class GameView @JvmOverloads constructor(
         gameBoard.onPieceMove = { onPieceMove?.invoke() }
         gameBoard.onPieceLock = { onPieceLock?.invoke() }
         gameBoard.onLineClear = { lineCount, clearedLines -> 
-            android.util.Log.d("GameView", "Received line clear from GameBoard: $lineCount lines")
+            Log.d(TAG, "Received line clear from GameBoard: $lineCount lines")
             try {
                 onLineClear?.invoke(lineCount)
                 // Use the lines that were cleared directly
                 linesToPulse.clear()
                 linesToPulse.addAll(clearedLines)
-                android.util.Log.d("GameView", "Found ${linesToPulse.size} lines to pulse")
+                Log.d(TAG, "Found ${linesToPulse.size} lines to pulse")
                 startPulseAnimation(lineCount)
-                android.util.Log.d("GameView", "Forwarded line clear callback")
+                Log.d(TAG, "Forwarded line clear callback")
             } catch (e: Exception) {
-                android.util.Log.e("GameView", "Error forwarding line clear callback", e)
+                Log.e(TAG, "Error forwarding line clear callback", e)
             }
         }
         
@@ -785,7 +793,7 @@ class GameView @JvmOverloads constructor(
      * Start the pulse animation for line clear
      */
     private fun startPulseAnimation(lineCount: Int) {
-        android.util.Log.d("GameView", "Starting pulse animation for $lineCount lines")
+        Log.d(TAG, "Starting pulse animation for $lineCount lines")
         
         // Cancel any existing animation
         pulseAnimator?.cancel()
@@ -804,7 +812,7 @@ class GameView @JvmOverloads constructor(
                 pulseAlpha = animation.animatedValue as Float
                 isPulsing = true
                 invalidate()
-                android.util.Log.d("GameView", "Pulse animation update: alpha = $pulseAlpha")
+                Log.d(TAG, "Pulse animation update: alpha = $pulseAlpha")
             }
             addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
@@ -812,7 +820,7 @@ class GameView @JvmOverloads constructor(
                     pulseAlpha = 0f
                     linesToPulse.clear()
                     invalidate()
-                    android.util.Log.d("GameView", "Pulse animation ended")
+                    Log.d(TAG, "Pulse animation ended")
                 }
             })
         }

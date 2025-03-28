@@ -1,6 +1,6 @@
 package com.mintris.model
 
-import kotlin.random.Random
+import android.util.Log
 
 /**
  * Represents the game board (grid) and manages game state
@@ -9,6 +9,10 @@ class GameBoard(
     val width: Int = 10,
     val height: Int = 20
 ) {
+    companion object {
+        private const val TAG = "GameBoard"
+    }
+
     // Board grid to track locked pieces
     // True = occupied, False = empty
     private val grid = Array(height) { BooleanArray(width) { false } }
@@ -55,6 +59,9 @@ class GameBoard(
     var onNextPieceChanged: (() -> Unit)? = null
     var onLineClear: ((Int, List<Int>) -> Unit)? = null
     
+    // Store the last cleared lines
+    private val lastClearedLines = mutableListOf<Int>()
+    
     init {
         spawnNextPiece()
         spawnPiece()
@@ -66,7 +73,7 @@ class GameBoard(
     private fun spawnNextPiece() {
         // If bag is empty, refill it with all piece types
         if (bag.isEmpty()) {
-            bag.addAll(TetrominoType.values())
+            bag.addAll(TetrominoType.entries.toTypedArray())
             bag.shuffle()
         }
         
@@ -326,18 +333,26 @@ class GameBoard(
             y--
         }
         
+        // Store the last cleared lines
+        lastClearedLines.clear()
+        lastClearedLines.addAll(linesToClear)
+        
         // If lines were cleared, calculate score in background and trigger callback
         if (shiftAmount > 0) {
-            android.util.Log.d("GameBoard", "Lines cleared: $shiftAmount")
+            // Log line clear
+            Log.d(TAG, "Lines cleared: $shiftAmount")
+            
             // Trigger line clear callback on main thread with the lines that were cleared
             val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
             mainHandler.post {
-                android.util.Log.d("GameBoard", "Triggering onLineClear callback with $shiftAmount lines")
+                // Call the line clear callback with the cleared line count
                 try {
-                    onLineClear?.invoke(shiftAmount, linesToClear)  // Pass the lines that were cleared
-                    android.util.Log.d("GameBoard", "onLineClear callback completed successfully")
+                    Log.d(TAG, "Triggering onLineClear callback with $shiftAmount lines")
+                    val clearedLines = getLastClearedLines()
+                    onLineClear?.invoke(shiftAmount, clearedLines)
+                    Log.d(TAG, "onLineClear callback completed successfully")
                 } catch (e: Exception) {
-                    android.util.Log.e("GameBoard", "Error in onLineClear callback", e)
+                    Log.e(TAG, "Error in onLineClear callback", e)
                 }
             }
             
@@ -582,4 +597,11 @@ class GameBoard(
      * Get the current combo count
      */
     fun getCombo(): Int = combo
+    
+    /**
+     * Get the list of lines that were most recently cleared
+     */
+    private fun getLastClearedLines(): List<Int> {
+        return lastClearedLines.toList()
+    }
 } 

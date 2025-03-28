@@ -7,14 +7,65 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.HapticFeedbackConstants
 import android.view.View
+import android.util.Log
 
+/**
+ * Handles haptic feedback for game events
+ */
 class GameHaptics(private val context: Context) {
-    private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+    companion object {
+        private const val TAG = "GameHaptics"
+    }
+    
+    // Vibrator service
+    private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
         vibratorManager.defaultVibrator
     } else {
         @Suppress("DEPRECATION")
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
+    
+    // Vibrate for line clear (more intense for more lines)
+    fun vibrateForLineClear(lineCount: Int) {
+        Log.d(TAG, "Attempting to vibrate for $lineCount lines")
+        
+        // Only proceed if the device has a vibrator and it's available
+        if (!vibrator.hasVibrator()) return
+        
+        // Scale duration and amplitude based on line count
+        // More lines = longer and stronger vibration
+        val duration = when(lineCount) {
+            1 -> 50L  // Single line: short vibration
+            2 -> 80L  // Double line: slightly longer
+            3 -> 120L // Triple line: even longer
+            4 -> 200L // Tetris: longest vibration
+            else -> 50L
+        }
+        
+        val amplitude = when(lineCount) {
+            1 -> 80  // Single line: mild vibration (80/255)
+            2 -> 120 // Double line: medium vibration (120/255)
+            3 -> 180 // Triple line: strong vibration (180/255)
+            4 -> 255 // Tetris: maximum vibration (255/255)
+            else -> 80
+        }
+        
+        Log.d(TAG, "Vibration parameters - Duration: ${duration}ms, Amplitude: $amplitude")
+        
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
+                Log.d(TAG, "Vibration triggered successfully")
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(duration)
+                Log.w(TAG, "Device does not support vibration effects (Android < 8.0)")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error triggering vibration", e)
+        }
     }
 
     fun performHapticFeedback(view: View, feedbackType: Int) {
@@ -23,40 +74,6 @@ class GameHaptics(private val context: Context) {
         } else {
             @Suppress("DEPRECATION")
             view.performHapticFeedback(feedbackType)
-        }
-    }
-
-    fun vibrateForLineClear(lineCount: Int) {
-        android.util.Log.d("GameHaptics", "Attempting to vibrate for $lineCount lines")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val duration = when (lineCount) {
-                4 -> 200L // Tetris - doubled from 100L
-                3 -> 160L // Triples - doubled from 80L
-                2 -> 120L // Doubles - doubled from 60L
-                1 -> 80L  // Singles - doubled from 40L
-                else -> 0L
-            }
-            
-            val amplitude = when (lineCount) {
-                4 -> 255 // Full amplitude for Tetris
-                3 -> 230 // 90% amplitude for triples
-                2 -> 180 // 70% amplitude for doubles
-                1 -> 128 // 50% amplitude for singles
-                else -> 0
-            }
-
-            android.util.Log.d("GameHaptics", "Vibration parameters - Duration: ${duration}ms, Amplitude: $amplitude")
-            if (duration > 0 && amplitude > 0) {
-                try {
-                    val vibrationEffect = VibrationEffect.createOneShot(duration, amplitude)
-                    vibrator.vibrate(vibrationEffect)
-                    android.util.Log.d("GameHaptics", "Vibration triggered successfully")
-                } catch (e: Exception) {
-                    android.util.Log.e("GameHaptics", "Error triggering vibration", e)
-                }
-            }
-        } else {
-            android.util.Log.w("GameHaptics", "Device does not support vibration effects (Android < 8.0)")
         }
     }
 

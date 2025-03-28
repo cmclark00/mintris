@@ -1,26 +1,18 @@
 package com.mintris
 
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.VibratorManager
 import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.view.HapticFeedbackConstants
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.mintris.databinding.ActivityMainBinding
 import com.mintris.game.GameHaptics
 import com.mintris.game.GameView
-import com.mintris.game.NextPieceView
 import com.mintris.game.TitleScreen
-import android.view.HapticFeedbackConstants
 import com.mintris.model.GameBoard
 import com.mintris.audio.GameMusic
 import com.mintris.model.HighScoreManager
@@ -33,9 +25,14 @@ import android.graphics.Color
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import android.graphics.Rect
+import android.util.Log
 import android.view.KeyEvent
 
 class MainActivity : AppCompatActivity() {
+    
+    companion object {
+        private const val TAG = "MainActivity"
+    }
     
     // UI components
     private lateinit var binding: ActivityMainBinding
@@ -165,18 +162,18 @@ class MainActivity : AppCompatActivity() {
         }
         
         gameView.onLineClear = { lineCount ->
-            android.util.Log.d("MainActivity", "Received line clear callback: $lineCount lines")
+            Log.d(TAG, "Received line clear callback: $lineCount lines")
             // Use enhanced haptic feedback for line clears
             if (isSoundEnabled) {
-                android.util.Log.d("MainActivity", "Sound is enabled, triggering haptic feedback")
+                Log.d(TAG, "Sound is enabled, triggering haptic feedback")
                 try {
                     gameHaptics.vibrateForLineClear(lineCount)
-                    android.util.Log.d("MainActivity", "Haptic feedback triggered successfully")
+                    Log.d(TAG, "Haptic feedback triggered successfully")
                 } catch (e: Exception) {
-                    android.util.Log.e("MainActivity", "Error triggering haptic feedback", e)
+                    Log.e(TAG, "Error triggering haptic feedback", e)
                 }
             } else {
-                android.util.Log.d("MainActivity", "Sound is disabled, skipping haptic feedback")
+                Log.d(TAG, "Sound is disabled, skipping haptic feedback")
             }
             // Record line clear in stats
             statsManager.recordLineClear(lineCount)
