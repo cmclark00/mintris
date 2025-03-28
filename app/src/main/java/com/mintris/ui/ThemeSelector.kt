@@ -86,6 +86,18 @@ class ThemeSelector @JvmOverloads constructor(
             // Set card background color based on theme
             setCardBackgroundColor(themeInfo.primaryColor)
             
+            // Add stroke for selected theme
+            if (isSelected) {
+                setContentPadding(4, 4, 4, 4)
+                // Create a gradient drawable for the border
+                val gradientDrawable = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(themeInfo.primaryColor)
+                    setStroke(4, Color.WHITE)
+                    cornerRadius = 12f
+                }
+                background = gradientDrawable
+            }
+            
             // Set card dimensions
             val cardSize = resources.getDimensionPixelSize(R.dimen.theme_card_size)
             layoutParams = GridLayout.LayoutParams().apply {
@@ -98,11 +110,6 @@ class ThemeSelector @JvmOverloads constructor(
             
             // Apply locked/selected state visuals
             alpha = if (isUnlocked) 1.0f else 0.5f
-            
-            // Add stroke for selected theme
-            if (isSelected) {
-                setContentPadding(4, 4, 4, 4)
-            }
         }
         
         // Create theme content container
