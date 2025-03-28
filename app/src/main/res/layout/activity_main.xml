@@ -234,6 +234,17 @@
             android:textColor="@color/white" />
     </LinearLayout>
     
+    <!-- Player Progression Screen -->
+    <com.mintris.ui.ProgressionScreen
+        android:id="@+id/progressionScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    
     <!-- Settings Menu overlay -->
     <LinearLayout
         android:id="@+id/pauseContainer"
@@ -253,129 +264,162 @@
             android:textStyle="bold"
             android:layout_marginBottom="32dp" />
 
-        <Button
-            android:id="@+id/pauseStartButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:background="@color/transparent"
-            android:text="@string/start"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
-
-        <Button
-            android:id="@+id/resumeButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@color/transparent"
-            android:text="@string/resume"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
-
-        <Button
-            android:id="@+id/pauseRestartButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@color/transparent"
-            android:text="@string/restart"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
-
-        <Button
-            android:id="@+id/highScoresButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@color/transparent"
-            android:text="@string/high_scores"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
-
-        <Button
-            android:id="@+id/statsButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@color/transparent"
-            android:text="@string/stats"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
             
-        <LinearLayout
-            android:id="@+id/levelSelectorContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:orientation="vertical"
-            android:gravity="center">
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/select_level"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-                
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
+                android:orientation="vertical"
+                android:gravity="center">
                 
                 <Button
-                    android:id="@+id/pauseLevelDownButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:id="@+id/pauseStartButton"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
                     android:background="@color/transparent"
-                    android:text="−"
+                    android:text="@string/start"
                     android:textColor="@color/white"
-                    android:textSize="24sp" />
-                    
-                <TextView
-                    android:id="@+id/pauseLevelText"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:gravity="center"
-                    android:text="1"
-                    android:textColor="@color/white"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-                    
+                    android:textSize="18sp" />
+        
                 <Button
-                    android:id="@+id/pauseLevelUpButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:id="@+id/resumeButton"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     android:background="@color/transparent"
-                    android:text="+"
+                    android:text="@string/resume"
                     android:textColor="@color/white"
-                    android:textSize="24sp" />
+                    android:textSize="18sp" />
+        
+                <Button
+                    android:id="@+id/pauseRestartButton"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/transparent"
+                    android:text="@string/restart"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+        
+                <Button
+                    android:id="@+id/highScoresButton"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/transparent"
+                    android:text="@string/high_scores"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+        
+                <Button
+                    android:id="@+id/statsButton"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/transparent"
+                    android:text="@string/stats"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+                    
+                <LinearLayout
+                    android:id="@+id/levelSelectorContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/select_level"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                        
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
+                        
+                        <Button
+                            android:id="@+id/pauseLevelDownButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@color/transparent"
+                            android:text="−"
+                            android:textColor="@color/white"
+                            android:textSize="24sp" />
+                            
+                        <TextView
+                            android:id="@+id/pauseLevelText"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:gravity="center"
+                            android:text="1"
+                            android:textColor="@color/white"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                            
+                        <Button
+                            android:id="@+id/pauseLevelUpButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@color/transparent"
+                            android:text="+"
+                            android:textColor="@color/white"
+                            android:textSize="24sp" />
+                    </LinearLayout>
+                </LinearLayout>
+                
+                <!-- Theme Selector -->
+                <com.mintris.ui.ThemeSelector
+                    android:id="@+id/themeSelector"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="16dp" />
+        
+                <Button
+                    android:id="@+id/settingsButton"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/transparent"
+                    android:text="@string/sound_on"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+        
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="16dp">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/music"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:layout_marginEnd="16dp" />
+                        
+                    <ImageButton
+                        android:id="@+id/musicToggle"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/toggle_music"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_volume_up" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/settingsButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:background="@color/transparent"
-            android:text="@string/sound_on"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
-
-        <ImageButton
-            android:id="@+id/musicToggle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/toggle_music"
-            android:padding="12dp"
-            android:src="@drawable/ic_volume_up"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/pauseStartButton"
-            app:layout_constraintTop_toTopOf="parent" />
+        </ScrollView>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

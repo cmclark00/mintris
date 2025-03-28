@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#1F1F1F">
+
+    <TextView
+        android:id="@+id/progression_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="LEVEL PROGRESS"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/player_level_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Player Level: 1"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <com.mintris.ui.XPProgressBar
+        android:id="@+id/xp_progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/xp_gain_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="+0 XP"
+        android:textSize="22sp"
+        android:textColor="#50C878"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:id="@+id/rewards_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="REWARDS UNLOCKED"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#FFD700"
+        android:gravity="center"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/rewards_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+    </ScrollView>
+
+    <Button
+        android:id="@+id/continue_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CONTINUE"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/rounded_button"
+        android:textColor="#FFFFFF" />
+
+</LinearLayout> 
