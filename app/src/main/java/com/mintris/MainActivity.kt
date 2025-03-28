@@ -19,6 +19,8 @@ import com.mintris.model.HighScoreManager
 import com.mintris.model.PlayerProgressionManager
 import com.mintris.model.StatsManager
 import com.mintris.ui.ProgressionScreen
+import com.mintris.ui.ThemeSelector
+import com.mintris.ui.BlockSkinSelector
 import java.text.SimpleDateFormat
 import java.util.*
 import android.graphics.Color
@@ -45,6 +47,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsManager: StatsManager
     private lateinit var progressionManager: PlayerProgressionManager
     private lateinit var progressionScreen: ProgressionScreen
+    private lateinit var themeSelector: ThemeSelector
+    private lateinit var blockSkinSelector: BlockSkinSelector
     
     // Game state
     private var isSoundEnabled = true
@@ -84,10 +88,15 @@ class MainActivity : AppCompatActivity() {
         highScoreManager = HighScoreManager(this)
         statsManager = StatsManager(this)
         progressionManager = PlayerProgressionManager(this)
+        themeSelector = binding.themeSelector
+        blockSkinSelector = binding.blockSkinSelector
         
         // Load and apply theme preference
-        currentTheme = loadThemePreference()
+        currentTheme = progressionManager.getSelectedTheme()
         applyTheme(currentTheme)
+        
+        // Load and apply block skin preference
+        gameView.setBlockSkin(progressionManager.getSelectedBlockSkin())
         
         // Set up game view
         gameView.setGameBoard(gameBoard)
@@ -102,8 +111,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Set up theme selector
-        val themeSelector = binding.themeSelector
-        themeSelector.onThemeSelected = { themeId ->
+        themeSelector.onThemeSelected = { themeId: String ->
             // Apply the new theme
             applyTheme(themeId)
             
@@ -114,6 +122,18 @@ class MainActivity : AppCompatActivity() {
             if (binding.pauseContainer.visibility == View.VISIBLE) {
                 showPauseMenu()
             }
+        }
+        
+        // Set up block skin selector
+        blockSkinSelector.onBlockSkinSelected = { skinId: String ->
+            // Apply the new block skin
+            gameView.setBlockSkin(skinId)
+            
+            // Save the selection
+            progressionManager.setSelectedBlockSkin(skinId)
+            
+            // Provide haptic feedback
+            gameHaptics.vibrateForPieceLock()
         }
         
         // Set up title screen
@@ -426,6 +446,13 @@ class MainActivity : AppCompatActivity() {
         
         // Update theme selector
         updateThemeSelector()
+        
+        // Update block skin selector
+        blockSkinSelector.updateBlockSkins(
+            progressionManager.getUnlockedBlocks(),
+            gameView.getCurrentBlockSkin(),
+            progressionManager.getPlayerLevel()
+        )
     }
     
     /**
@@ -564,7 +591,7 @@ class MainActivity : AppCompatActivity() {
         
         // Save the selected theme
         currentTheme = themeId
-        saveThemePreference(themeId)
+        progressionManager.setSelectedTheme(themeId)
 
         // Apply theme to title screen if it's visible
         if (titleScreen.visibility == View.VISIBLE) {
@@ -618,22 +645,6 @@ class MainActivity : AppCompatActivity() {
         gameView.invalidate()
     }
     
-    /**
-     * Save the selected theme in preferences
-     */
-    private fun saveThemePreference(themeId: String) {
-        val prefs = getSharedPreferences("mintris_settings", Context.MODE_PRIVATE)
-        prefs.edit().putString("selected_theme", themeId).apply()
-    }
-    
-    /**
-     * Load the saved theme preference
-     */
-    private fun loadThemePreference(): String {
-        val prefs = getSharedPreferences("mintris_settings", Context.MODE_PRIVATE)
-        return prefs.getString("selected_theme", PlayerProgressionManager.THEME_CLASSIC) ?: PlayerProgressionManager.THEME_CLASSIC
-    }
-
     /**
      * Get the appropriate color for the current theme
      */

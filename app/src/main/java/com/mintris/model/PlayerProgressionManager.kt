@@ -20,7 +20,6 @@ class PlayerProgressionManager(context: Context) {
     // Track unlocked rewards
     private val unlockedThemes = mutableSetOf<String>()
     private val unlockedBlocks = mutableSetOf<String>()
-    private val unlockedPowers = mutableSetOf<String>()
     private val unlockedBadges = mutableSetOf<String>()
     
     // XP gained in the current session
@@ -41,17 +40,20 @@ class PlayerProgressionManager(context: Context) {
         // Load unlocked rewards
         val themesSet = prefs.getStringSet(KEY_UNLOCKED_THEMES, setOf()) ?: setOf()
         val blocksSet = prefs.getStringSet(KEY_UNLOCKED_BLOCKS, setOf()) ?: setOf()
-        val powersSet = prefs.getStringSet(KEY_UNLOCKED_POWERS, setOf()) ?: setOf()
         val badgesSet = prefs.getStringSet(KEY_UNLOCKED_BADGES, setOf()) ?: setOf()
         
         unlockedThemes.addAll(themesSet)
         unlockedBlocks.addAll(blocksSet)
-        unlockedPowers.addAll(powersSet)
         unlockedBadges.addAll(badgesSet)
         
         // Add default theme if nothing is unlocked
         if (unlockedThemes.isEmpty()) {
             unlockedThemes.add(THEME_CLASSIC)
+        }
+        
+        // Add default block skin if nothing is unlocked
+        if (unlockedBlocks.isEmpty()) {
+            unlockedBlocks.add("block_skin_1")
         }
     }
     
@@ -65,7 +67,6 @@ class PlayerProgressionManager(context: Context) {
             .putLong(KEY_TOTAL_XP_EARNED, totalXPEarned)
             .putStringSet(KEY_UNLOCKED_THEMES, unlockedThemes)
             .putStringSet(KEY_UNLOCKED_BLOCKS, unlockedBlocks)
-            .putStringSet(KEY_UNLOCKED_POWERS, unlockedPowers)
             .putStringSet(KEY_UNLOCKED_BADGES, unlockedBadges)
             .apply()
     }
@@ -179,30 +180,6 @@ class PlayerProgressionManager(context: Context) {
             }
         }
         
-        // Check for power unlocks
-        when (level) {
-            8 -> {
-                if (unlockedPowers.add(POWER_FREEZE_TIME)) {
-                    newRewards.add("Unlocked Freeze Time Power!")
-                }
-            }
-            12 -> {
-                if (unlockedPowers.add(POWER_BLOCK_SWAP)) {
-                    newRewards.add("Unlocked Block Swap Power!")
-                }
-            }
-            18 -> {
-                if (unlockedPowers.add(POWER_SAFE_LANDING)) {
-                    newRewards.add("Unlocked Safe Landing Power!")
-                }
-            }
-            30 -> {
-                if (unlockedPowers.add(POWER_PERFECT_CLEAR)) {
-                    newRewards.add("Unlocked Perfect Clear Power!")
-                }
-            }
-        }
-        
         // Check for block skin unlocks
         if (level % 7 == 0 && level <= 35) {
             val blockSkin = "block_skin_${level / 7}"
@@ -215,10 +192,37 @@ class PlayerProgressionManager(context: Context) {
     }
     
     /**
+     * Check and unlock any rewards the player should have based on their current level
+     * This ensures players don't miss unlocks if they level up multiple times at once
+     */
+    private fun checkAllUnlocksForCurrentLevel() {
+        // Check theme unlocks
+        if (playerLevel >= 5) unlockedThemes.add(THEME_NEON)
+        if (playerLevel >= 10) unlockedThemes.add(THEME_MONOCHROME)
+        if (playerLevel >= 15) unlockedThemes.add(THEME_RETRO)
+        if (playerLevel >= 20) unlockedThemes.add(THEME_MINIMALIST)
+        if (playerLevel >= 25) unlockedThemes.add(THEME_GALAXY)
+        
+        // Check block skin unlocks
+        for (i in 1..5) {
+            val requiredLevel = i * 7
+            if (playerLevel >= requiredLevel) {
+                unlockedBlocks.add("block_skin_$i")
+            }
+        }
+        
+        // Save any newly unlocked items
+        saveProgress()
+    }
+    
+    /**
      * Start a new progression session
      */
     fun startNewSession() {
         sessionXPGained = 0
+        
+        // Ensure all appropriate unlocks are available
+        checkAllUnlocksForCurrentLevel()
     }
     
     // Getters
@@ -227,7 +231,6 @@ class PlayerProgressionManager(context: Context) {
     fun getXPForNextLevel(): Long = calculateXPForLevel(playerLevel)
     fun getSessionXPGained(): Long = sessionXPGained
     fun getUnlockedThemes(): Set<String> = unlockedThemes.toSet()
-    fun getUnlockedPowers(): Set<String> = unlockedPowers.toSet()
     fun getUnlockedBlocks(): Set<String> = unlockedBlocks.toSet()
     fun getUnlockedBadges(): Set<String> = unlockedBadges.toSet()
     
@@ -236,13 +239,6 @@ class PlayerProgressionManager(context: Context) {
      */
     fun isThemeUnlocked(themeId: String): Boolean {
         return unlockedThemes.contains(themeId)
-    }
-    
-    /**
-     * Check if a specific power is unlocked
-     */
-    fun isPowerUnlocked(powerId: String): Boolean {
-        return unlockedPowers.contains(powerId)
     }
     
     /**
@@ -266,11 +262,13 @@ class PlayerProgressionManager(context: Context) {
         
         unlockedThemes.clear()
         unlockedBlocks.clear()
-        unlockedPowers.clear()
         unlockedBadges.clear()
         
         // Add default theme
         unlockedThemes.add(THEME_CLASSIC)
+        
+        // Add default block skin
+        unlockedBlocks.add("block_skin_1")
         
         saveProgress()
     }
@@ -282,8 +280,9 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_TOTAL_XP_EARNED = "total_xp_earned"
         private const val KEY_UNLOCKED_THEMES = "unlocked_themes"
         private const val KEY_UNLOCKED_BLOCKS = "unlocked_blocks"
-        private const val KEY_UNLOCKED_POWERS = "unlocked_powers"
         private const val KEY_UNLOCKED_BADGES = "unlocked_badges"
+        private const val KEY_SELECTED_BLOCK_SKIN = "selected_block_skin"
+        private const val KEY_SELECTED_THEME = "selected_theme"
         
         // XP curve parameters
         private const val BASE_XP = 4000.0 // Base XP for level 1 (reduced from 5000)
@@ -313,20 +312,6 @@ class PlayerProgressionManager(context: Context) {
             THEME_MINIMALIST to 20,
             THEME_GALAXY to 25
         )
-        
-        // Power IDs
-        const val POWER_FREEZE_TIME = "power_freeze_time"
-        const val POWER_BLOCK_SWAP = "power_block_swap"
-        const val POWER_SAFE_LANDING = "power_safe_landing"
-        const val POWER_PERFECT_CLEAR = "power_perfect_clear"
-        
-        // Map of powers to required levels
-        val POWER_REQUIRED_LEVELS = mapOf(
-            POWER_FREEZE_TIME to 8,
-            POWER_BLOCK_SWAP to 12,
-            POWER_SAFE_LANDING to 18,
-            POWER_PERFECT_CLEAR to 30
-        )
     }
     
     /**
@@ -337,9 +322,34 @@ class PlayerProgressionManager(context: Context) {
     }
     
     /**
-     * Get the required level for a specific power
+     * Set the selected block skin
      */
-    fun getRequiredLevelForPower(powerId: String): Int {
-        return POWER_REQUIRED_LEVELS[powerId] ?: 1
+    fun setSelectedBlockSkin(skinId: String) {
+        if (unlockedBlocks.contains(skinId)) {
+            prefs.edit().putString(KEY_SELECTED_BLOCK_SKIN, skinId).apply()
+        }
+    }
+    
+    /**
+     * Get the selected block skin
+     */
+    fun getSelectedBlockSkin(): String {
+        return prefs.getString(KEY_SELECTED_BLOCK_SKIN, "block_skin_1") ?: "block_skin_1"
+    }
+    
+    /**
+     * Set the selected theme
+     */
+    fun setSelectedTheme(themeId: String) {
+        if (unlockedThemes.contains(themeId)) {
+            prefs.edit().putString(KEY_SELECTED_THEME, themeId).apply()
+        }
+    }
+    
+    /**
+     * Get the selected theme
+     */
+    fun getSelectedTheme(): String {
+        return prefs.getString(KEY_SELECTED_THEME, THEME_CLASSIC) ?: THEME_CLASSIC
     }
 } 

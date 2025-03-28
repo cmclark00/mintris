@@ -144,6 +144,10 @@ class GameView @JvmOverloads constructor(
     private val isStrictDirectionLock = true   // Enable strict direction locking to prevent diagonal inputs
     private val minHardDropDistance = 1.5f     // Minimum distance (in blocks) for hard drop gesture
 
+    // Block skin
+    private var currentBlockSkin: String = "block_skin_1"
+    private val blockSkinPaints = mutableMapOf<String, Paint>()
+    
     private enum class Direction {
         HORIZONTAL, VERTICAL
     }
@@ -206,7 +210,63 @@ class GameView @JvmOverloads constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             setSystemGestureExclusionRects(listOf(Rect(0, 0, width, height)))
         }
+        
+        // Initialize block skin paints
+        initializeBlockSkinPaints()
     }
+    
+    /**
+     * Initialize paints for different block skins
+     */
+    private fun initializeBlockSkinPaints() {
+        // Classic skin
+        blockSkinPaints["block_skin_1"] = Paint().apply {
+            color = Color.WHITE
+            isAntiAlias = true
+        }
+        
+        // Neon skin
+        blockSkinPaints["block_skin_2"] = Paint().apply {
+            color = Color.parseColor("#FF00FF")
+            isAntiAlias = true
+            maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.OUTER)
+        }
+        
+        // Retro skin
+        blockSkinPaints["block_skin_3"] = Paint().apply {
+            color = Color.parseColor("#FF5A5F")
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+        
+        // Minimalist skin
+        blockSkinPaints["block_skin_4"] = Paint().apply {
+            color = Color.BLACK
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+        
+        // Galaxy skin
+        blockSkinPaints["block_skin_5"] = Paint().apply {
+            color = Color.parseColor("#66FCF1")
+            isAntiAlias = true
+            maskFilter = BlurMaskFilter(12f, BlurMaskFilter.Blur.OUTER)
+        }
+    }
+    
+    /**
+     * Set the current block skin
+     */
+    fun setBlockSkin(skinId: String) {
+        currentBlockSkin = skinId
+        invalidate()
+    }
+    
+    /**
+     * Get the current block skin
+     */
+    fun getCurrentBlockSkin(): String = currentBlockSkin
     
     /**
      * Start the game
@@ -519,16 +579,19 @@ class GameView @JvmOverloads constructor(
         // Save canvas state before drawing block effects
         canvas.save()
         
+        // Get the current block skin paint
+        val paint = blockSkinPaints[currentBlockSkin] ?: blockSkinPaints["block_skin_1"]!!
+        
         // Draw outer glow
         blockGlowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
         canvas.drawRect(left - 2f, top - 2f, right + 2f, bottom + 2f, blockGlowPaint)
         
-        // Draw block
-        blockPaint.apply {
-            color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
+        // Draw block with current skin
+        paint.apply {
+            color = if (isGhost) Color.argb(30, 255, 255, 255) else paint.color
             alpha = if (isGhost) 30 else 255
         }
-        canvas.drawRect(left, top, right, bottom, blockPaint)
+        canvas.drawRect(left, top, right, bottom, paint)
         
         // Draw inner glow
         glowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
