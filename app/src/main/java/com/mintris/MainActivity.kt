@@ -32,6 +32,8 @@ import java.util.*
 import android.graphics.Color
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.Rect
+import android.view.KeyEvent
 
 class MainActivity : AppCompatActivity() {
     
@@ -72,6 +74,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Disable Android back gesture to prevent accidental app exits
+        disableAndroidBackGesture()
         
         // Initialize game components
         gameBoard = GameBoard()
@@ -645,5 +650,84 @@ class MainActivity : AppCompatActivity() {
             PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#66FCF1")
             else -> Color.WHITE
         }
+    }
+
+    /**
+     * Disables the Android system back gesture to prevent accidental exits
+     */
+    private fun disableAndroidBackGesture() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Set the entire window to be excluded from the system gesture areas
+            window.decorView.post {
+                // Create a list of rectangles representing the edges of the screen to exclude from system gestures
+                val gestureInsets = window.decorView.rootWindowInsets?.systemGestureInsets
+                if (gestureInsets != null) {
+                    val leftEdge = Rect(0, 0, 50, window.decorView.height)
+                    val rightEdge = Rect(window.decorView.width - 50, 0, window.decorView.width, window.decorView.height)
+                    val bottomEdge = Rect(0, window.decorView.height - 50, window.decorView.width, window.decorView.height)
+                    
+                    window.decorView.systemGestureExclusionRects = listOf(leftEdge, rightEdge, bottomEdge)
+                }
+            }
+        }
+        
+        // Add an on back pressed callback to handle back button/gesture
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    // If we're playing the game, handle it as a pause action instead of exiting
+                    if (gameView.visibility == View.VISIBLE && !gameView.isPaused && !gameView.isGameOver()) {
+                        gameView.pause()
+                        gameMusic.pause()
+                        showPauseMenu()
+                        binding.pauseStartButton.visibility = View.GONE
+                        binding.resumeButton.visibility = View.VISIBLE
+                    } else if (binding.pauseContainer.visibility == View.VISIBLE) {
+                        // If pause menu is showing, handle as a resume
+                        resumeGame()
+                    } else if (binding.gameOverContainer.visibility == View.VISIBLE) {
+                        // If game over is showing, go back to title
+                        hideGameOver()
+                        showTitleScreen()
+                    } else if (titleScreen.visibility == View.VISIBLE) {
+                        // If title screen is showing, allow normal back behavior (exit app)
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            })
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // For Android 11 (R) to Android 12 (S), use the WindowInsetsController to disable gestures
+            window.insetsController?.systemBarsBehavior = 
+                android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+    
+    /**
+     * Completely block the hardware back button during gameplay
+     */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // If back button is pressed
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // Handle back button press as a pause action during gameplay
+            if (gameView.visibility == View.VISIBLE && !gameView.isPaused && !gameView.isGameOver()) {
+                gameView.pause()
+                gameMusic.pause()
+                showPauseMenu()
+                binding.pauseStartButton.visibility = View.GONE
+                binding.resumeButton.visibility = View.VISIBLE
+                return true // Consume the event
+            } else if (binding.pauseContainer.visibility == View.VISIBLE) {
+                // If pause menu is showing, handle as a resume
+                resumeGame()
+                return true // Consume the event
+            } else if (binding.gameOverContainer.visibility == View.VISIBLE) {
+                // If game over is showing, go back to title
+                hideGameOver()
+                showTitleScreen()
+                return true // Consume the event
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 } 

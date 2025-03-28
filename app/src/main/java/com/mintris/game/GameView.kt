@@ -39,7 +39,8 @@ class GameView @JvmOverloads constructor(
     
     // Game state
     private var isRunning = false
-    private var isPaused = false
+    var isPaused = false  // Changed from private to public to allow access from MainActivity
+    private var score = 0
     
     // Callbacks
     var onNextPieceChanged: (() -> Unit)? = null
@@ -128,14 +129,16 @@ class GameView @JvmOverloads constructor(
     private var lastTapTime = 0L
     private var lastRotationTime = 0L
     private var lastMoveTime = 0L
-    private var minSwipeVelocity = 800  // Minimum velocity for swipe to be considered a hard drop
+    private var minSwipeVelocity = 1200  // Increased from 800 to require more deliberate swipes
     private val maxTapMovement = 20f    // Maximum movement allowed for a tap (in pixels)
     private val minTapTime = 100L       // Minimum time for a tap (in milliseconds)
     private val rotationCooldown = 150L // Minimum time between rotations (in milliseconds)
     private val moveCooldown = 50L      // Minimum time between move haptics (in milliseconds)
     private var lockedDirection: Direction? = null  // Track the locked movement direction
     private val minMovementThreshold = 0.75f  // Minimum movement threshold relative to block size
-    private val directionLockThreshold = 1.5f  // Threshold for direction lock relative to block size
+    private val directionLockThreshold = 2.5f  // Increased from 1.5f to make direction locking more aggressive
+    private val isStrictDirectionLock = true   // Enable strict direction locking to prevent diagonal inputs
+    private val minHardDropDistance = 1.5f     // Minimum distance (in blocks) for hard drop gesture
 
     private enum class Direction {
         HORIZONTAL, VERTICAL
@@ -612,12 +615,14 @@ class GameView @JvmOverloads constructor(
                     
                     // Check if movement exceeds threshold
                     if (absDeltaX > blockSize * minMovementThreshold || absDeltaY > blockSize * minMovementThreshold) {
-                        // Determine dominant direction
+                        // Determine dominant direction with stricter criteria
                         if (absDeltaX > absDeltaY * directionLockThreshold) {
                             lockedDirection = Direction.HORIZONTAL
                         } else if (absDeltaY > absDeltaX * directionLockThreshold) {
                             lockedDirection = Direction.VERTICAL
                         }
+                        // If strict direction lock is enabled and we couldn't determine a clear direction, don't set one
+                        // This prevents diagonal movements from being recognized
                     }
                 }
                 
@@ -661,8 +666,12 @@ class GameView @JvmOverloads constructor(
                 val deltaY = event.y - startY
                 val deltaX = event.x - startX
                 
-                // If the movement was fast and downward, treat as hard drop
-                if (moveTime > 0 && deltaY > blockSize * 0.5f && (deltaY / moveTime) * 1000 > minSwipeVelocity) {
+                // Only allow hard drops with a deliberate downward swipe
+                // Requires: predominantly vertical movement, minimum distance, and minimum velocity
+                if (moveTime > 0 && 
+                    deltaY > blockSize * minHardDropDistance && // Require longer swipe for hard drop
+                    (deltaY / moveTime) * 1000 > minSwipeVelocity && 
+                    abs(deltaX) < abs(deltaY) * 0.3f) { // Require more purely vertical movement (reduced from 0.5f to 0.3f)
                     gameBoard.hardDrop()
                     invalidate()
                 } else if (moveTime < minTapTime && 
