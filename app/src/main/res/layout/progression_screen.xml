@@ -10,7 +10,7 @@
         android:id="@+id/progression_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="LEVEL PROGRESS"
+        android:text="LEVEL UP"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@color/white"
@@ -72,16 +72,16 @@
 
     </ScrollView>
 
-    <Button
+    <TextView
         android:id="@+id/continue_button"
-        android:layout_width="200dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="CONTINUE"
         android:textSize="18sp"
         android:layout_gravity="center"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
-        android:background="@color/transparent"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:padding="16dp" />
 
 </LinearLayout> 

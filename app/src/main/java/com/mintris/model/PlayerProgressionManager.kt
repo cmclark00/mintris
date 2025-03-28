@@ -286,8 +286,8 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_UNLOCKED_BADGES = "unlocked_badges"
         
         // XP curve parameters
-        private const val BASE_XP = 2500.0 // Base XP for level 1 (increased from 1000)
-        private const val XP_CURVE_FACTOR = 2.0 // Exponential factor for XP curve (increased from 1.5)
+        private const val BASE_XP = 5000.0 // Base XP for level 1 (increased from 2500)
+        private const val XP_CURVE_FACTOR = 2.2 // Exponential factor for XP curve (increased from 2.0)
         
         // XP calculation constants
         private const val LEVEL_MULTIPLIER = 0.1 // 10% bonus per level

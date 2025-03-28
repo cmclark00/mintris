@@ -156,6 +156,9 @@ class ThemeSelector @JvmOverloads constructor(
             ).apply {
                 gravity = android.view.Gravity.CENTER
             }
+            // Make text bold and more visible for better readability
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setShadowLayer(3f, 1f, 1f, Color.BLACK)
         }
         
         // Add a lock icon if the theme is locked

@@ -9,10 +9,15 @@ import com.mintris.R
 
 class GameMusic(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
-    private var isEnabled = false
+    private var isEnabled = true
+    private var isPrepared = false
     
     init {
-        setupMediaPlayer()
+        try {
+            setupMediaPlayer()
+        } catch (e: Exception) {
+            Log.e("GameMusic", "Error initializing: ${e.message}")
+        }
     }
     
     private fun setupMediaPlayer() {
@@ -31,42 +36,47 @@ class GameMusic(private val context: Context) {
                             .build()
                     )
                 }
+                isPrepared = true
             }
             Log.d("GameMusic", "MediaPlayer setup complete")
         } catch (e: Exception) {
             Log.e("GameMusic", "Error setting up MediaPlayer", e)
+            mediaPlayer = null
+            isPrepared = false
         }
     }
     
     fun start() {
-        try {
-            Log.d("GameMusic", "Starting music playback, isEnabled: $isEnabled")
-            if (isEnabled && mediaPlayer?.isPlaying != true) {
+        if (isEnabled && mediaPlayer != null && isPrepared) {
+            try {
+                Log.d("GameMusic", "Starting music playback, isEnabled: $isEnabled")
                 mediaPlayer?.start()
                 Log.d("GameMusic", "Music playback started")
+            } catch (e: Exception) {
+                Log.e("GameMusic", "Error starting music: ${e.message}")
             }
-        } catch (e: Exception) {
-            Log.e("GameMusic", "Error starting music", e)
         }
     }
     
     fun pause() {
         try {
             Log.d("GameMusic", "Pausing music playback")
-            mediaPlayer?.pause()
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.pause()
+            }
         } catch (e: Exception) {
-            Log.e("GameMusic", "Error pausing music", e)
+            Log.e("GameMusic", "Error pausing music: ${e.message}")
         }
     }
     
     fun resume() {
-        try {
-            Log.d("GameMusic", "Resuming music playback")
-            if (isEnabled && mediaPlayer?.isPlaying != true) {
+        if (isEnabled && mediaPlayer != null && isPrepared) {
+            try {
+                Log.d("GameMusic", "Resuming music playback")
                 mediaPlayer?.start()
+            } catch (e: Exception) {
+                Log.e("GameMusic", "Error resuming music: ${e.message}")
             }
-        } catch (e: Exception) {
-            Log.e("GameMusic", "Error resuming music", e)
         }
     }
     
@@ -83,10 +93,11 @@ class GameMusic(private val context: Context) {
     fun setEnabled(enabled: Boolean) {
         Log.d("GameMusic", "Setting music enabled: $enabled")
         isEnabled = enabled
-        if (enabled) {
-            start()
-        } else {
+        
+        if (!enabled && mediaPlayer?.isPlaying == true) {
             pause()
+        } else if (enabled && mediaPlayer != null && isPrepared) {
+            start()
         }
     }
     
@@ -97,8 +108,9 @@ class GameMusic(private val context: Context) {
             Log.d("GameMusic", "Releasing MediaPlayer")
             mediaPlayer?.release()
             mediaPlayer = null
+            isPrepared = false
         } catch (e: Exception) {
-            Log.e("GameMusic", "Error releasing MediaPlayer", e)
+            Log.e("GameMusic", "Error releasing music: ${e.message}")
         }
     }
 } 
