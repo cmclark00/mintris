@@ -74,6 +74,50 @@ class BlockSkinSelector @JvmOverloads constructor(
     }
     
     /**
+     * Set the selected skin with a visual effect
+     */
+    fun setSelectedSkin(skinId: String) {
+        if (skinId == selectedSkin) return
+        
+        // Update previously selected card
+        skinCards[selectedSkin]?.let { prevCard ->
+            prevCard.cardElevation = 2f
+            // Reset any special styling
+            prevCard.background = null
+            prevCard.setCardBackgroundColor(getBlockSkins()[selectedSkin]?.backgroundColor ?: Color.BLACK)
+        }
+        
+        // Update visual state of newly selected card
+        skinCards[skinId]?.let { card ->
+            card.cardElevation = 12f
+            
+            // Flash animation for selection feedback
+            val flashColor = Color.WHITE
+            val originalColor = getBlockSkins()[skinId]?.backgroundColor ?: Color.BLACK
+            
+            // Create animator for flash effect
+            val flashAnimator = android.animation.ValueAnimator.ofArgb(flashColor, originalColor)
+            flashAnimator.duration = 300 // 300ms
+            flashAnimator.addUpdateListener { animator ->
+                val color = animator.animatedValue as Int
+                card.setCardBackgroundColor(color)
+            }
+            flashAnimator.start()
+            
+            // Add special border to selected card
+            val gradientDrawable = android.graphics.drawable.GradientDrawable().apply {
+                setColor(originalColor)
+                setStroke(6, Color.WHITE)  // Thicker border
+                cornerRadius = 12f
+            }
+            card.background = gradientDrawable
+        }
+        
+        // Update selected skin
+        selectedSkin = skinId
+    }
+    
+    /**
      * Create a card for a block skin
      */
     private fun createBlockSkinCard(
@@ -202,32 +246,8 @@ class BlockSkinSelector @JvmOverloads constructor(
             card.setOnClickListener {
                 // Only trigger callback if this isn't already the selected skin
                 if (skinId != selectedSkin) {
-                    // Update previously selected card
-                    skinCards[selectedSkin]?.let { prevCard ->
-                        prevCard.cardElevation = 2f
-                        // Reset any special styling
-                        prevCard.background = null
-                        prevCard.setCardBackgroundColor(getBlockSkins()[selectedSkin]?.backgroundColor ?: Color.BLACK)
-                    }
-                    
-                    // Update visual state of newly selected card
-                    card.cardElevation = 12f
-                    
-                    // Flash animation for selection feedback
-                    val flashColor = Color.WHITE
-                    val originalColor = skinInfo.backgroundColor
-                    
-                    // Create animator for flash effect
-                    val flashAnimator = android.animation.ValueAnimator.ofArgb(flashColor, originalColor)
-                    flashAnimator.duration = 300 // 300ms
-                    flashAnimator.addUpdateListener { animator ->
-                        val color = animator.animatedValue as Int
-                        card.setCardBackgroundColor(color)
-                    }
-                    flashAnimator.start()
-                    
-                    // Update selected skin
-                    selectedSkin = skinId
+                    // Update UI for selection
+                    setSelectedSkin(skinId)
                     
                     // Notify listener
                     onBlockSkinSelected?.invoke(skinId)

@@ -582,20 +582,65 @@ class GameView @JvmOverloads constructor(
         // Get the current block skin paint
         val paint = blockSkinPaints[currentBlockSkin] ?: blockSkinPaints["block_skin_1"]!!
         
-        // Draw outer glow
-        blockGlowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
-        canvas.drawRect(left - 2f, top - 2f, right + 2f, bottom + 2f, blockGlowPaint)
+        // Create a clone of the paint to avoid modifying the original
+        val blockPaint = Paint(paint)
         
-        // Draw block with current skin
-        paint.apply {
-            color = if (isGhost) Color.argb(30, 255, 255, 255) else paint.color
-            alpha = if (isGhost) 30 else 255
+        // Special handling for neon skin
+        if (currentBlockSkin == "block_skin_2") {
+            // Stronger outer glow for neon skin
+            blockGlowPaint.color = if (isGhost) Color.argb(30, 255, 0, 255) else Color.parseColor("#FF00FF")
+            blockGlowPaint.maskFilter = BlurMaskFilter(16f, BlurMaskFilter.Blur.OUTER)
+            canvas.drawRect(left - 4f, top - 4f, right + 4f, bottom + 4f, blockGlowPaint)
+            
+            // For neon, use semi-translucent fill with strong glowing edges
+            blockPaint.style = Paint.Style.FILL_AND_STROKE
+            blockPaint.strokeWidth = 2f
+            blockPaint.maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.NORMAL)
+            
+            if (isGhost) {
+                blockPaint.color = Color.argb(30, 255, 0, 255)
+                blockPaint.alpha = 30
+            } else {
+                blockPaint.color = Color.parseColor("#66004D") // Darker magenta fill
+                blockPaint.alpha = 170  // More opaque to be more visible
+            }
+            
+            // Draw block with neon effect
+            canvas.drawRect(left, top, right, bottom, blockPaint)
+            
+            // Draw a brighter border for better visibility
+            val borderPaint = Paint().apply {
+                color = Color.parseColor("#FF00FF")
+                style = Paint.Style.STROKE
+                strokeWidth = 3f
+                alpha = 255
+                isAntiAlias = true
+                maskFilter = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
+            }
+            canvas.drawRect(left, top, right, bottom, borderPaint)
+            
+            // Inner glow for neon blocks - brighter than before
+            glowPaint.color = if (isGhost) Color.argb(10, 255, 0, 255) else Color.parseColor("#FF00FF")
+            glowPaint.alpha = if (isGhost) 10 else 100 // More visible inner glow
+            glowPaint.style = Paint.Style.STROKE
+            glowPaint.strokeWidth = 2f
+            glowPaint.maskFilter = BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL)
+            canvas.drawRect(left + 4f, top + 4f, right - 4f, bottom - 4f, glowPaint)
+        } else {
+            // Standard rendering for other skins
+            // Draw outer glow
+            blockGlowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
+            canvas.drawRect(left - 2f, top - 2f, right + 2f, bottom + 2f, blockGlowPaint)
+            
+            // Draw block with current skin
+            blockPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else blockPaint.color
+            blockPaint.alpha = if (isGhost) 30 else 255
+            canvas.drawRect(left, top, right, bottom, blockPaint)
+            
+            // Draw inner glow
+            glowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
+            canvas.drawRect(left + 1f, top + 1f, right - 1f, bottom - 1f, glowPaint)
         }
-        canvas.drawRect(left, top, right, bottom, paint)
-        
-        // Draw inner glow
-        glowPaint.color = if (isGhost) Color.argb(30, 255, 255, 255) else Color.WHITE
-        canvas.drawRect(left + 1f, top + 1f, right - 1f, bottom - 1f, glowPaint)
         
         // Draw pulse effect if animation is active and this is a pulsing line
         if (isPulsing && isPulsingLine) {
