@@ -251,8 +251,8 @@ class GameView @JvmOverloads constructor(
             return
         }
         
-        // Move the current tetromino down automatically
-        gameBoard.moveDown()
+        // Update the game state
+        gameBoard.update()
         
         // Update UI with current game state
         onGameStateChanged?.invoke(gameBoard.score, gameBoard.level, gameBoard.lines)
@@ -653,7 +653,7 @@ class GameView @JvmOverloads constructor(
                     }
                     Direction.VERTICAL -> {
                         if (deltaY > blockSize * minMovementThreshold) {
-                            gameBoard.moveDown()
+                            gameBoard.softDrop()
                             lastTouchY = event.y
                             if (currentTime - lastMoveTime >= moveCooldown) {
                                 gameHaptics?.vibrateForPieceMove()

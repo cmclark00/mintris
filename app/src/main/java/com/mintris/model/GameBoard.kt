@@ -38,6 +38,7 @@ class GameBoard(
     var isGameOver = false
     var isHardDropInProgress = false  // Make public
     var isPieceLocking = false  // Make public
+    private var isPlayerSoftDrop = false  // Track if the drop is player-initiated
     
     // Scoring state
     private var combo = 0
@@ -165,12 +166,25 @@ class GameBoard(
         
         return if (canMove(0, 1)) {
             currentPiece?.y = currentPiece?.y?.plus(1) ?: 0
+            // Only add soft drop points if it's a player-initiated drop
+            if (isPlayerSoftDrop) {
+                score += 1
+            }
             onPieceMove?.invoke()
             true
         } else {
             lockPiece()
             false
         }
+    }
+    
+    /**
+     * Player-initiated soft drop
+     */
+    fun softDrop() {
+        isPlayerSoftDrop = true
+        moveDown()
+        isPlayerSoftDrop = false
     }
     
     /**
@@ -182,11 +196,20 @@ class GameBoard(
         isHardDropInProgress = true
         val piece = currentPiece ?: return
         
+        // Count how many cells the piece will drop
+        var dropDistance = 0
+        while (canMove(0, dropDistance + 1)) {
+            dropDistance++
+        }
+        
         // Move piece down until it can't move anymore
         while (canMove(0, 1)) {
             piece.y++
             onPieceMove?.invoke()
         }
+        
+        // Add hard drop points (2 points per cell)
+        score += dropDistance * 2
         
         // Lock the piece immediately
         lockPiece()
@@ -603,5 +626,14 @@ class GameBoard(
      */
     private fun getLastClearedLines(): List<Int> {
         return lastClearedLines.toList()
+    }
+
+    /**
+     * Update the game state (called by game loop)
+     */
+    fun update() {
+        if (!isGameOver) {
+            moveDown()
+        }
     }
 } 
