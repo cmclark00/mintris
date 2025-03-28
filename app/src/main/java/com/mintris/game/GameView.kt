@@ -133,6 +133,13 @@ class GameView @JvmOverloads constructor(
     private val minTapTime = 100L       // Minimum time for a tap (in milliseconds)
     private val rotationCooldown = 150L // Minimum time between rotations (in milliseconds)
     private val moveCooldown = 50L      // Minimum time between move haptics (in milliseconds)
+    private var lockedDirection: Direction? = null  // Track the locked movement direction
+    private val minMovementThreshold = 0.75f  // Minimum movement threshold relative to block size
+    private val directionLockThreshold = 1.5f  // Threshold for direction lock relative to block size
+
+    private enum class Direction {
+        HORIZONTAL, VERTICAL
+    }
     
     // Callback for game events
     var onGameStateChanged: ((score: Int, level: Int, lines: Int) -> Unit)? = null
@@ -578,6 +585,7 @@ class GameView @JvmOverloads constructor(
                 startY = event.y
                 lastTouchX = event.x
                 lastTouchY = event.y
+                lockedDirection = null  // Reset direction lock
                 
                 // Check for double tap (rotate)
                 val currentTime = System.currentTimeMillis()
@@ -597,32 +605,53 @@ class GameView @JvmOverloads constructor(
                 val deltaY = event.y - lastTouchY
                 val currentTime = System.currentTimeMillis()
                 
-                // Horizontal movement (left/right) with reduced threshold
-                if (abs(deltaX) > blockSize * 0.5f) {  // Reduced from 1.0f for more responsive movement
-                    if (deltaX > 0) {
-                        gameBoard.moveRight()
-                    } else {
-                        gameBoard.moveLeft()
+                // Determine movement direction if not locked
+                if (lockedDirection == null) {
+                    val absDeltaX = abs(deltaX)
+                    val absDeltaY = abs(deltaY)
+                    
+                    // Check if movement exceeds threshold
+                    if (absDeltaX > blockSize * minMovementThreshold || absDeltaY > blockSize * minMovementThreshold) {
+                        // Determine dominant direction
+                        if (absDeltaX > absDeltaY * directionLockThreshold) {
+                            lockedDirection = Direction.HORIZONTAL
+                        } else if (absDeltaY > absDeltaX * directionLockThreshold) {
+                            lockedDirection = Direction.VERTICAL
+                        }
                     }
-                    lastTouchX = event.x
-                    // Add haptic feedback for movement with cooldown
-                    if (currentTime - lastMoveTime >= moveCooldown) {
-                        gameHaptics?.vibrateForPieceMove()
-                        lastMoveTime = currentTime
-                    }
-                    invalidate()
                 }
                 
-                // Vertical movement (soft drop) with reduced threshold
-                if (deltaY > blockSize * 0.25f) {  // Reduced from 0.5f for more responsive soft drop
-                    gameBoard.moveDown()
-                    lastTouchY = event.y
-                    // Add haptic feedback for movement with cooldown
-                    if (currentTime - lastMoveTime >= moveCooldown) {
-                        gameHaptics?.vibrateForPieceMove()
-                        lastMoveTime = currentTime
+                // Handle movement based on locked direction
+                when (lockedDirection) {
+                    Direction.HORIZONTAL -> {
+                        if (abs(deltaX) > blockSize * minMovementThreshold) {
+                            if (deltaX > 0) {
+                                gameBoard.moveRight()
+                            } else {
+                                gameBoard.moveLeft()
+                            }
+                            lastTouchX = event.x
+                            if (currentTime - lastMoveTime >= moveCooldown) {
+                                gameHaptics?.vibrateForPieceMove()
+                                lastMoveTime = currentTime
+                            }
+                            invalidate()
+                        }
                     }
-                    invalidate()
+                    Direction.VERTICAL -> {
+                        if (deltaY > blockSize * minMovementThreshold) {
+                            gameBoard.moveDown()
+                            lastTouchY = event.y
+                            if (currentTime - lastMoveTime >= moveCooldown) {
+                                gameHaptics?.vibrateForPieceMove()
+                                lastMoveTime = currentTime
+                            }
+                            invalidate()
+                        }
+                    }
+                    null -> {
+                        // No direction lock yet, don't process movement
+                    }
                 }
             }
             
@@ -647,6 +676,9 @@ class GameView @JvmOverloads constructor(
                         invalidate()
                     }
                 }
+                
+                // Reset direction lock
+                lockedDirection = null
             }
         }
         
