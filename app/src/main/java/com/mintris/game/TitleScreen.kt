@@ -12,6 +12,7 @@ import java.util.Random
 import android.util.Log
 import com.mintris.model.HighScoreManager
 import com.mintris.model.HighScore
+import com.mintris.model.PlayerProgressionManager
 import kotlin.math.abs
 import androidx.core.graphics.withTranslation
 import androidx.core.graphics.withScale
@@ -44,6 +45,9 @@ class TitleScreen @JvmOverloads constructor(
     
     // Callback for when the user touches the screen
     var onStartGame: (() -> Unit)? = null
+
+    // Theme color
+    private var themeColor = Color.WHITE
     
     // Define tetromino shapes (I, O, T, S, Z, J, L)
     private val tetrominoShapes = arrayOf(
@@ -311,5 +315,41 @@ class TitleScreen @JvmOverloads constructor(
         // Handle the click event
         onStartGame?.invoke()
         return true
+    }
+
+    /**
+     * Apply a theme to the title screen
+     */
+    fun applyTheme(themeId: String) {
+        // Get theme color based on theme ID
+        themeColor = when (themeId) {
+            PlayerProgressionManager.THEME_CLASSIC -> Color.WHITE
+            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#FF00FF")
+            PlayerProgressionManager.THEME_MONOCHROME -> Color.LTGRAY
+            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#FF5A5F")
+            PlayerProgressionManager.THEME_MINIMALIST -> Color.BLACK
+            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#66FCF1")
+            else -> Color.WHITE
+        }
+
+        // Update paint colors
+        titlePaint.color = themeColor
+        promptPaint.color = themeColor
+        highScorePaint.color = themeColor
+        paint.color = themeColor
+        glowPaint.color = themeColor
+
+        // Update background color
+        setBackgroundColor(when (themeId) {
+            PlayerProgressionManager.THEME_CLASSIC -> Color.BLACK
+            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#0D0221")
+            PlayerProgressionManager.THEME_MONOCHROME -> Color.parseColor("#1A1A1A")
+            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#3F2832")
+            PlayerProgressionManager.THEME_MINIMALIST -> Color.WHITE
+            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#0B0C10")
+            else -> Color.BLACK
+        })
+
+        invalidate()
     }
 } 

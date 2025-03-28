@@ -491,6 +491,7 @@ class MainActivity : AppCompatActivity() {
         binding.gameOverContainer.visibility = View.GONE
         binding.pauseContainer.visibility = View.GONE
         titleScreen.visibility = View.VISIBLE
+        titleScreen.applyTheme(currentTheme)
     }
 
     /**
@@ -521,6 +522,11 @@ class MainActivity : AppCompatActivity() {
         // Save the selected theme
         currentTheme = themeId
         saveThemePreference(themeId)
+
+        // Apply theme to title screen if it's visible
+        if (titleScreen.visibility == View.VISIBLE) {
+            titleScreen.applyTheme(themeId)
+        }
         
         // Apply theme colors based on theme ID
         when (themeId) {
