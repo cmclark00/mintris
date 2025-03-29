@@ -31,6 +31,9 @@ class ProgressionScreen @JvmOverloads constructor(
     private val rewardsContainer: LinearLayout
     private val continueButton: TextView
     
+    // Current theme
+    private var currentTheme: String = PlayerProgressionManager.THEME_CLASSIC
+    
     // Callback for when the player dismisses the screen
     var onContinue: (() -> Unit)? = null
     
@@ -62,6 +65,9 @@ class ProgressionScreen @JvmOverloads constructor(
         newRewards: List<String>,
         themeId: String = PlayerProgressionManager.THEME_CLASSIC
     ) {
+        // Update current theme
+        currentTheme = themeId
+        
         // Hide rewards container initially if there are no new rewards
         rewardsContainer.visibility = if (newRewards.isEmpty()) View.GONE else View.INVISIBLE
         
@@ -73,6 +79,10 @@ class ProgressionScreen @JvmOverloads constructor(
         // Update texts
         playerLevelText.text = "Player Level: $playerLevel"
         xpGainText.text = "+$xpGained XP"
+        
+        // Update level up text visibility
+        val progressionTitle = findViewById<TextView>(R.id.progression_title)
+        progressionTitle.visibility = if (newRewards.any { it.contains("Level") }) View.VISIBLE else View.GONE
         
         // Start with initial animations
         AnimatorSet().apply {
@@ -146,8 +156,17 @@ class ProgressionScreen @JvmOverloads constructor(
             cardElevation = 4f
             useCompatPadding = true
             
-            // Default background color - will be adjusted based on theme
-            setCardBackgroundColor(Color.BLACK)
+            // Set background color based on current theme
+            val backgroundColor = when (currentTheme) {
+                PlayerProgressionManager.THEME_CLASSIC -> Color.BLACK
+                PlayerProgressionManager.THEME_NEON -> Color.parseColor("#0D0221")
+                PlayerProgressionManager.THEME_MONOCHROME -> Color.parseColor("#1A1A1A")
+                PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#3F2832")
+                PlayerProgressionManager.THEME_MINIMALIST -> Color.WHITE
+                PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#0B0C10")
+                else -> Color.BLACK
+            }
+            setCardBackgroundColor(backgroundColor)
             
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -176,6 +195,8 @@ class ProgressionScreen @JvmOverloads constructor(
      * Apply the current theme to the progression screen
      */
     fun applyTheme(themeId: String) {
+        currentTheme = themeId
+        
         // Get reference to the title text
         val progressionTitle = findViewById<TextView>(R.id.progression_title)
         val rewardsTitle = findViewById<TextView>(R.id.rewards_title)
@@ -257,10 +278,10 @@ class ProgressionScreen @JvmOverloads constructor(
             }
         }
         
-        // Set theme color on XP progress bar
+        // Update XP progress bar theme color
         xpProgressBar.setThemeColor(xpThemeColor)
         
-        // Update card colors for any existing reward cards
+        // Update reward card colors
         updateRewardCardColors(themeId)
     }
     
@@ -268,8 +289,7 @@ class ProgressionScreen @JvmOverloads constructor(
      * Update colors of existing reward cards to match the theme
      */
     private fun updateRewardCardColors(themeId: String) {
-        // Color for card backgrounds based on theme
-        val cardBackgroundColor = when (themeId) {
+        val backgroundColor = when (themeId) {
             PlayerProgressionManager.THEME_CLASSIC -> Color.BLACK
             PlayerProgressionManager.THEME_NEON -> Color.parseColor("#0D0221")
             PlayerProgressionManager.THEME_MONOCHROME -> Color.parseColor("#1A1A1A")
@@ -279,28 +299,9 @@ class ProgressionScreen @JvmOverloads constructor(
             else -> Color.BLACK
         }
         
-        // Text color for rewards based on theme
-        val rewardTextColor = when (themeId) {
-            PlayerProgressionManager.THEME_CLASSIC -> Color.WHITE
-            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#FF00FF")
-            PlayerProgressionManager.THEME_MONOCHROME -> Color.LTGRAY
-            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#FF5A5F")
-            PlayerProgressionManager.THEME_MINIMALIST -> Color.BLACK
-            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#66FCF1")
-            else -> Color.WHITE
-        }
-        
-        // Update each card in the rewards container
         for (i in 0 until rewardsContainer.childCount) {
             val card = rewardsContainer.getChildAt(i) as? CardView
-            card?.let {
-                it.setCardBackgroundColor(cardBackgroundColor)
-                
-                // Update text color in the card
-                if (it.childCount > 0 && it.getChildAt(0) is TextView) {
-                    (it.getChildAt(0) as TextView).setTextColor(rewardTextColor)
-                }
-            }
+            card?.setCardBackgroundColor(backgroundColor)
         }
     }
 } 

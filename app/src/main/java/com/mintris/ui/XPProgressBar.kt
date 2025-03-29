@@ -99,6 +99,8 @@ class XPProgressBar @JvmOverloads constructor(
      */
     fun setThemeColor(color: Int) {
         themeColor = color
+        progressPaint.color = color
+        textPaint.color = color
         levelBadgePaint.color = color
         invalidate()
     }
