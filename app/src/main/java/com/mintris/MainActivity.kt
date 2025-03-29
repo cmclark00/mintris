@@ -688,29 +688,27 @@ class MainActivity : AppCompatActivity() {
         
         // Add an on back pressed callback to handle back button/gesture
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    // If we're playing the game, handle it as a pause action instead of exiting
-                    if (gameView.visibility == View.VISIBLE && !gameView.isPaused && !gameView.isGameOver()) {
-                        gameView.pause()
-                        gameMusic.pause()
-                        showPauseMenu()
-                        binding.pauseStartButton.visibility = View.GONE
-                        binding.resumeButton.visibility = View.VISIBLE
-                    } else if (binding.pauseContainer.visibility == View.VISIBLE) {
-                        // If pause menu is showing, handle as a resume
-                        resumeGame()
-                    } else if (binding.gameOverContainer.visibility == View.VISIBLE) {
-                        // If game over is showing, go back to title
-                        hideGameOver()
-                        showTitleScreen()
-                    } else if (titleScreen.visibility == View.VISIBLE) {
-                        // If title screen is showing, allow normal back behavior (exit app)
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
-                    }
+            onBackPressedDispatcher.addCallback(this) {
+                // If we're playing the game, handle it as a pause action instead of exiting
+                if (gameView.visibility == View.VISIBLE && !gameView.isPaused && !gameView.isGameOver()) {
+                    gameView.pause()
+                    gameMusic.pause()
+                    showPauseMenu()
+                    binding.pauseStartButton.visibility = View.GONE
+                    binding.resumeButton.visibility = View.VISIBLE
+                } else if (binding.pauseContainer.visibility == View.VISIBLE) {
+                    // If pause menu is showing, handle as a resume
+                    resumeGame()
+                } else if (binding.gameOverContainer.visibility == View.VISIBLE) {
+                    // If game over is showing, go back to title
+                    hideGameOver()
+                    showTitleScreen()
+                } else if (titleScreen.visibility == View.VISIBLE) {
+                    // If title screen is showing, allow normal back behavior (exit app)
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
                 }
-            })
+            }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // For Android 11 (R) to Android 12 (S), use the WindowInsetsController to disable gestures
             window.insetsController?.systemBarsBehavior = 

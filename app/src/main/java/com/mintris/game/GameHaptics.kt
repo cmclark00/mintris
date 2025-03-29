@@ -5,26 +5,27 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
-import android.util.Log
+import androidx.core.content.getSystemService
 
 /**
  * Handles haptic feedback for game events
  */
 class GameHaptics(private val context: Context) {
 
-    companion object {
-        private const val TAG = "GameHaptics"
-    }
+    private val TAG = "GameHaptics"
     
     // Vibrator service
-    private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-        vibratorManager.defaultVibrator
-    } else {
-        @Suppress("DEPRECATION")
-        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    private val vibrator: Vibrator by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService<VibratorManager>()
+            vibratorManager?.defaultVibrator ?: throw IllegalStateException("No vibrator available")
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
     }
     
     // Vibrate for line clear (more intense for more lines)
