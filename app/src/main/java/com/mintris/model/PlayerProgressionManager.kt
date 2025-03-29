@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import com.mintris.R
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.math.minOf
+import kotlin.math.min
 
 /**
  * Manages player progression, experience points, and unlockable rewards
@@ -96,7 +96,7 @@ class PlayerProgressionManager(context: Context) {
     fun calculateGameXP(score: Int, lines: Int, level: Int, gameTime: Long, 
                         tetrisCount: Int, perfectClearCount: Int): Long {
         // Base XP from score with level multiplier (capped at level 10)
-        val cappedLevel = minOf(level, 10)
+        val cappedLevel = min(level, 10)
         val scoreXP = (score * (1 + LEVEL_MULTIPLIER * cappedLevel)).toLong()
         
         // XP from lines cleared (reduced for higher levels)
