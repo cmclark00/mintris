@@ -9,10 +9,11 @@
         android:id="@+id/available_skins_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="BLOCK SKINS"
+        android:text="block skins"
         android:textColor="@android:color/white"
-        android:textSize="18sp"
+        android:textSize="24sp"
         android:textStyle="bold"
+        android:fontFamily="sans-serif"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 

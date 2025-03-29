@@ -62,36 +62,40 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
-                android:textSize="24sp"
-                android:fontFamily="sans-serif-light"
-                tools:text="Score: 0" />
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                tools:text="score: 0" />
 
             <TextView
                 android:id="@+id/currentLevelText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
-                android:textSize="24sp"
-                android:fontFamily="sans-serif-light"
-                tools:text="Level: 1" />
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                tools:text="level: 1" />
 
             <TextView
                 android:id="@+id/linesText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
-                android:textSize="24sp"
-                android:fontFamily="sans-serif-light"
-                tools:text="Lines: 0" />
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                tools:text="lines: 0" />
 
             <TextView
                 android:id="@+id/comboText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
-                android:textSize="24sp"
-                android:fontFamily="sans-serif-light"
-                tools:text="Combo: 0" />
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                tools:text="combo: 0" />
         </LinearLayout>
 
         <!-- Next Piece Preview -->
@@ -131,16 +135,18 @@
             android:layout_height="wrap_content"
             android:text="@string/game_over"
             android:textColor="@color/white"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/session_stats"
             android:textColor="@color/white"
-            android:textSize="20sp"
+            android:textSize="28sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif"
             android:layout_marginTop="24dp" />
 
         <TextView
@@ -149,7 +155,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionLinesText"
@@ -157,7 +165,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionPiecesText"
@@ -165,7 +175,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionTimeText"
@@ -173,7 +185,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionLevelText"
@@ -181,15 +195,18 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/line_clears"
             android:textColor="@color/white"
-            android:textSize="20sp"
+            android:textSize="28sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif"
             android:layout_marginTop="16dp" />
 
         <TextView
@@ -198,7 +215,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionDoublesText"
@@ -206,7 +225,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionTriplesText"
@@ -214,7 +235,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/sessionTetrisesText"
@@ -222,7 +245,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
 
         <Button
             android:id="@+id/playAgainButton"
@@ -231,7 +256,10 @@
             android:layout_marginTop="32dp"
             android:background="@color/transparent"
             android:text="@string/play"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif" />
     </LinearLayout>
     
     <!-- Player Progression Screen -->
@@ -270,7 +298,9 @@
                 android:textColor="@color/white"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:layout_marginEnd="16dp" />
+                android:fontFamily="sans-serif"
+                android:layout_marginEnd="16dp"
+                android:textAllCaps="false" />
 
             <com.mintris.ui.LevelBadge
                 android:id="@+id/pauseLevelBadge"
@@ -299,7 +329,10 @@
                     android:background="@color/transparent"
                     android:text="@string/start"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif"
+                    android:textAllCaps="false" />
         
                 <Button
                     android:id="@+id/resumeButton"
@@ -309,7 +342,10 @@
                     android:background="@color/transparent"
                     android:text="@string/resume"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif"
+                    android:textAllCaps="false" />
         
                 <Button
                     android:id="@+id/pauseRestartButton"
@@ -319,7 +355,10 @@
                     android:background="@color/transparent"
                     android:text="@string/restart"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif"
+                    android:textAllCaps="false" />
         
                 <Button
                     android:id="@+id/highScoresButton"
@@ -329,7 +368,10 @@
                     android:background="@color/transparent"
                     android:text="@string/high_scores"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif"
+                    android:textAllCaps="false" />
         
                 <Button
                     android:id="@+id/statsButton"
@@ -339,7 +381,10 @@
                     android:background="@color/transparent"
                     android:text="@string/stats"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif"
+                    android:textAllCaps="false" />
                     
                 <LinearLayout
                     android:id="@+id/levelSelectorContainer"
@@ -355,8 +400,10 @@
                         android:layout_height="wrap_content"
                         android:text="@string/select_level"
                         android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif"
+                        android:textAllCaps="false" />
                         
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -371,7 +418,9 @@
                             android:background="@color/transparent"
                             android:text="−"
                             android:textColor="@color/white"
-                            android:textSize="24sp" />
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif" />
                             
                         <TextView
                             android:id="@+id/pauseLevelText"
@@ -381,7 +430,8 @@
                             android:text="1"
                             android:textColor="@color/white"
                             android:textSize="24sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif" />
                             
                         <Button
                             android:id="@+id/pauseLevelUpButton"
@@ -390,7 +440,9 @@
                             android:background="@color/transparent"
                             android:text="+"
                             android:textColor="@color/white"
-                            android:textSize="24sp" />
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif" />
                     </LinearLayout>
                 </LinearLayout>
                 
@@ -418,7 +470,10 @@
                     android:background="@color/transparent"
                     android:text="@string/sound_on"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif"
+                    android:textAllCaps="false" />
         
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -433,7 +488,10 @@
                         android:layout_height="wrap_content"
                         android:text="@string/music"
                         android:textColor="@color/white"
-                        android:textSize="18sp"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif"
+                        android:textAllCaps="false"
                         android:layout_marginEnd="16dp" />
                         
                     <ImageButton
