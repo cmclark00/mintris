@@ -1,17 +1,13 @@
 package com.mintris
 
 import android.app.Activity
+import android.graphics.Color
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.mintris.databinding.HighScoreEntryBinding
 import com.mintris.model.HighScore
 import com.mintris.model.HighScoreManager
 import com.mintris.model.PlayerProgressionManager
-import android.graphics.Color
 
 class HighScoreEntryActivity : AppCompatActivity() {
     private lateinit var binding: HighScoreEntryBinding
