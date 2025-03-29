@@ -66,8 +66,7 @@ class HighScoreEntryActivity : AppCompatActivity() {
     }
 
     private fun loadThemePreference(): String {
-        val prefs = getSharedPreferences("mintris_settings", MODE_PRIVATE)
-        return prefs.getString("selected_theme", PlayerProgressionManager.THEME_CLASSIC) ?: PlayerProgressionManager.THEME_CLASSIC
+        return progressionManager.getSelectedTheme()
     }
 
     private fun applyTheme(themeId: String) {
