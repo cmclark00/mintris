@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.mintris.R
 import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.math.minOf
 
 /**
  * Manages player progression, experience points, and unlockable rewards
@@ -94,21 +95,22 @@ class PlayerProgressionManager(context: Context) {
      */
     fun calculateGameXP(score: Int, lines: Int, level: Int, gameTime: Long, 
                         tetrisCount: Int, perfectClearCount: Int): Long {
-        // Base XP from score with level multiplier
-        val scoreXP = (score * (1 + LEVEL_MULTIPLIER * level)).toLong()
+        // Base XP from score with level multiplier (capped at level 10)
+        val cappedLevel = minOf(level, 10)
+        val scoreXP = (score * (1 + LEVEL_MULTIPLIER * cappedLevel)).toLong()
         
-        // XP from lines cleared
-        val linesXP = lines * XP_PER_LINE
+        // XP from lines cleared (reduced for higher levels)
+        val linesXP = lines * XP_PER_LINE * (1 - (level - 1) * 0.05).coerceAtLeast(0.5)
         
-        // XP from special moves
-        val tetrisBonus = tetrisCount * TETRIS_XP_BONUS
-        val perfectClearBonus = perfectClearCount * PERFECT_CLEAR_XP_BONUS
+        // XP from special moves (reduced for higher levels)
+        val tetrisBonus = tetrisCount * TETRIS_XP_BONUS * (1 - (level - 1) * 0.05).coerceAtLeast(0.5)
+        val perfectClearBonus = perfectClearCount * PERFECT_CLEAR_XP_BONUS * (1 - (level - 1) * 0.05).coerceAtLeast(0.5)
         
-        // Time bonus (to reward longer gameplay)
-        val timeBonus = (gameTime / 60000) * TIME_XP_PER_MINUTE // XP per minute played
+        // Time bonus (reduced for longer games)
+        val timeBonus = (gameTime / 60000) * TIME_XP_PER_MINUTE * (1 - (gameTime / 3600000) * 0.1).coerceAtLeast(0.5)
         
         // Calculate total XP
-        return scoreXP + linesXP + tetrisBonus + perfectClearBonus + timeBonus
+        return (scoreXP + linesXP + tetrisBonus + perfectClearBonus + timeBonus).toLong()
     }
     
     /**
@@ -285,13 +287,13 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_SELECTED_BLOCK_SKIN = "selected_block_skin"
         
         // XP constants
-        private const val BASE_XP = 1000L
-        private const val XP_CURVE_FACTOR = 1.5
-        private const val LEVEL_MULTIPLIER = 0.1
-        private const val XP_PER_LINE = 100L
-        private const val TETRIS_XP_BONUS = 500L
-        private const val PERFECT_CLEAR_XP_BONUS = 1000L
-        private const val TIME_XP_PER_MINUTE = 50L
+        private const val BASE_XP = 2000L
+        private const val XP_CURVE_FACTOR = 1.8
+        private const val LEVEL_MULTIPLIER = 0.05
+        private const val XP_PER_LINE = 50L
+        private const val TETRIS_XP_BONUS = 200L
+        private const val PERFECT_CLEAR_XP_BONUS = 400L
+        private const val TIME_XP_PER_MINUTE = 25L
         
         // Theme constants
         const val THEME_CLASSIC = "theme_classic"
