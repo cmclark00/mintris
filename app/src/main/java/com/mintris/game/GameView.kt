@@ -153,6 +153,7 @@ class GameView @JvmOverloads constructor(
     // Block skin
     private var currentBlockSkin: String = "block_skin_1"
     private val blockSkinPaints = mutableMapOf<String, Paint>()
+    private var currentThemeColor = Color.WHITE
     
     private enum class Direction {
         HORIZONTAL, VERTICAL
@@ -1049,5 +1050,27 @@ class GameView @JvmOverloads constructor(
             })
         }
         pulseAnimator?.start()
+    }
+    
+    /**
+     * Set the theme color for the game view
+     */
+    fun setThemeColor(color: Int) {
+        currentThemeColor = color
+        blockPaint.color = color
+        ghostBlockPaint.color = color
+        glowPaint.color = color
+        blockGlowPaint.color = color
+        borderGlowPaint.color = color
+        pulsePaint.color = color
+        invalidate()
+    }
+    
+    /**
+     * Set the background color for the game view
+     */
+    override fun setBackgroundColor(color: Int) {
+        super.setBackgroundColor(color)
+        invalidate()
     }
 }

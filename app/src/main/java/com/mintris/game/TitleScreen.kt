@@ -46,8 +46,9 @@ class TitleScreen @JvmOverloads constructor(
     // Callback for when the user touches the screen
     var onStartGame: (() -> Unit)? = null
 
-    // Theme color
+    // Theme color and background color
     private var themeColor = Color.WHITE
+    private var backgroundColor = Color.BLACK
     
     // Define tetromino shapes (I, O, T, S, Z, J, L)
     private val tetrominoShapes = arrayOf(
@@ -110,7 +111,7 @@ class TitleScreen @JvmOverloads constructor(
     init {
         // Title text settings
         titlePaint.apply {
-            color = Color.WHITE
+            color = themeColor
             textSize = 120f
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
@@ -119,7 +120,7 @@ class TitleScreen @JvmOverloads constructor(
         
         // "Touch to start" text settings
         promptPaint.apply {
-            color = Color.WHITE
+            color = themeColor
             textSize = 50f
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
@@ -129,7 +130,7 @@ class TitleScreen @JvmOverloads constructor(
         
         // High scores text settings
         highScorePaint.apply {
-            color = Color.WHITE
+            color = themeColor
             textSize = 70f
             textAlign = Paint.Align.LEFT  // Changed to LEFT alignment
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)  // Changed to monospace
@@ -137,16 +138,16 @@ class TitleScreen @JvmOverloads constructor(
             alpha = 200
         }
         
-        // General paint settings for tetrominos (white)
+        // General paint settings for tetrominos
         paint.apply {
-            color = Color.WHITE
+            color = themeColor
             style = Paint.Style.FILL
             isAntiAlias = true
         }
         
         // Glow paint settings for tetrominos
         glowPaint.apply {
-            color = Color.WHITE
+            color = themeColor
             style = Paint.Style.FILL
             isAntiAlias = true
             alpha = 60
@@ -184,8 +185,8 @@ class TitleScreen @JvmOverloads constructor(
         try {
             super.onDraw(canvas)
             
-            // Draw background
-            canvas.drawColor(Color.BLACK)
+            // Draw background using the current background color
+            canvas.drawColor(backgroundColor)
             
             // Add any pending tetrominos
             tetrominos.addAll(tetrominosToAdd)
@@ -340,7 +341,7 @@ class TitleScreen @JvmOverloads constructor(
         glowPaint.color = themeColor
 
         // Update background color
-        setBackgroundColor(when (themeId) {
+        backgroundColor = when (themeId) {
             PlayerProgressionManager.THEME_CLASSIC -> Color.BLACK
             PlayerProgressionManager.THEME_NEON -> Color.parseColor("#0D0221")
             PlayerProgressionManager.THEME_MONOCHROME -> Color.parseColor("#1A1A1A")
@@ -348,8 +349,29 @@ class TitleScreen @JvmOverloads constructor(
             PlayerProgressionManager.THEME_MINIMALIST -> Color.WHITE
             PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#0B0C10")
             else -> Color.BLACK
-        })
+        }
 
+        invalidate()
+    }
+
+    /**
+     * Set the theme color for the title screen
+     */
+    fun setThemeColor(color: Int) {
+        themeColor = color
+        titlePaint.color = color
+        promptPaint.color = color
+        highScorePaint.color = color
+        paint.color = color
+        glowPaint.color = color
+        invalidate()
+    }
+    
+    /**
+     * Set the background color for the title screen
+     */
+    override fun setBackgroundColor(color: Int) {
+        backgroundColor = color
         invalidate()
     }
 } 

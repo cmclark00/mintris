@@ -91,6 +91,14 @@ class MainActivity : AppCompatActivity() {
         themeSelector = binding.themeSelector
         blockSkinSelector = binding.blockSkinSelector
         
+        // Set up progression screen
+        progressionScreen = binding.progressionScreen
+        progressionScreen.visibility = View.GONE
+        progressionScreen.onContinue = {
+            progressionScreen.visibility = View.GONE
+            binding.gameOverContainer.visibility = View.VISIBLE
+        }
+        
         // Load and apply theme preference
         currentTheme = progressionManager.getSelectedTheme()
         applyTheme(currentTheme)
@@ -108,14 +116,6 @@ class MainActivity : AppCompatActivity() {
         // Set up game view
         gameView.setGameBoard(gameBoard)
         gameView.setHaptics(gameHaptics)
-        
-        // Set up progression screen
-        progressionScreen = binding.progressionScreen
-        progressionScreen.visibility = View.GONE
-        progressionScreen.onContinue = {
-            progressionScreen.visibility = View.GONE
-            binding.gameOverContainer.visibility = View.VISIBLE
-        }
         
         // Set up theme selector
         themeSelector.onThemeSelected = { themeId: String ->
@@ -358,10 +358,7 @@ class MainActivity : AppCompatActivity() {
         var showingHighScore = false
         
         // Show progression screen first with XP animation
-        binding.gameOverContainer.visibility = View.GONE
-        progressionScreen.visibility = View.VISIBLE
-        progressionScreen.applyTheme(currentTheme)
-        progressionScreen.showProgress(progressionManager, xpGained, newRewards, currentTheme)
+        showProgressionScreen(xpGained, newRewards)
         
         // Override the continue button behavior if high score needs to be shown
         val originalOnContinue = progressionScreen.onContinue
@@ -593,63 +590,55 @@ class MainActivity : AppCompatActivity() {
      * Apply a theme to the game
      */
     private fun applyTheme(themeId: String) {
-        // Only apply if the theme is unlocked
-        if (!progressionManager.isThemeUnlocked(themeId)) return
-        
-        // Save the selected theme
         currentTheme = themeId
+        val themeColor = when (themeId) {
+            PlayerProgressionManager.THEME_CLASSIC -> Color.WHITE
+            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#FF00FF")
+            PlayerProgressionManager.THEME_MONOCHROME -> Color.LTGRAY
+            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#FF5A5F")
+            PlayerProgressionManager.THEME_MINIMALIST -> Color.BLACK
+            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#66FCF1")
+            else -> Color.WHITE
+        }
+        
+        // Get background color for the theme
+        val backgroundColor = when (themeId) {
+            PlayerProgressionManager.THEME_CLASSIC -> Color.BLACK
+            PlayerProgressionManager.THEME_NEON -> Color.parseColor("#0D0221")
+            PlayerProgressionManager.THEME_MONOCHROME -> Color.parseColor("#1A1A1A")
+            PlayerProgressionManager.THEME_RETRO -> Color.parseColor("#3F2832")
+            PlayerProgressionManager.THEME_MINIMALIST -> Color.WHITE
+            PlayerProgressionManager.THEME_GALAXY -> Color.parseColor("#0B0C10")
+            else -> Color.BLACK
+        }
+        
+        // Apply background color to root view
+        binding.root.setBackgroundColor(backgroundColor)
+        
+        // Apply theme color to title screen
+        titleScreen.setThemeColor(themeColor)
+        titleScreen.setBackgroundColor(backgroundColor)
+        
+        // Apply theme color to game over screen
+        binding.gameOverContainer.setBackgroundColor(backgroundColor)
+        binding.gameOverText.setTextColor(themeColor)
+        binding.scoreText.setTextColor(themeColor)
+        binding.currentLevelText.setTextColor(themeColor)
+        binding.linesText.setTextColor(themeColor)
+        binding.comboText.setTextColor(themeColor)
+        binding.playAgainButton.setTextColor(themeColor)
+        binding.playAgainButton.setBackgroundResource(android.R.color.transparent)
+        binding.playAgainButton.setTextSize(24f)
+        
+        // Apply theme to progression screen (it will handle its own colors)
+        progressionScreen.applyTheme(themeId)
+        
+        // Apply theme color to game view
+        gameView.setThemeColor(themeColor)
+        gameView.setBackgroundColor(backgroundColor)
+        
+        // Save theme preference
         progressionManager.setSelectedTheme(themeId)
-
-        // Apply theme to title screen if it's visible
-        if (titleScreen.visibility == View.VISIBLE) {
-            titleScreen.applyTheme(themeId)
-        }
-        
-        // Apply theme colors based on theme ID
-        when (themeId) {
-            PlayerProgressionManager.THEME_CLASSIC -> {
-                // Default black theme
-                binding.root.setBackgroundColor(Color.BLACK)
-            }
-            PlayerProgressionManager.THEME_NEON -> {
-                // Neon theme with dark purple background
-                binding.root.setBackgroundColor(Color.parseColor("#0D0221"))
-            }
-            PlayerProgressionManager.THEME_MONOCHROME -> {
-                // Monochrome dark gray
-                binding.root.setBackgroundColor(Color.parseColor("#1A1A1A"))
-            }
-            PlayerProgressionManager.THEME_RETRO -> {
-                // Retro arcade theme
-                binding.root.setBackgroundColor(Color.parseColor("#3F2832"))
-            }
-            PlayerProgressionManager.THEME_MINIMALIST -> {
-                // Minimalist white theme
-                binding.root.setBackgroundColor(Color.WHITE)
-                
-                // Update text colors for visibility
-                binding.scoreText.setTextColor(Color.BLACK)
-                binding.currentLevelText.setTextColor(Color.BLACK)
-                binding.linesText.setTextColor(Color.BLACK)
-                binding.comboText.setTextColor(Color.BLACK)
-            }
-            PlayerProgressionManager.THEME_GALAXY -> {
-                // Galaxy dark blue theme
-                binding.root.setBackgroundColor(Color.parseColor("#0B0C10"))
-            }
-        }
-        
-        // Apply theme to progression screen if it's visible and initialized
-        if (::progressionScreen.isInitialized && progressionScreen.visibility == View.VISIBLE) {
-            progressionScreen.applyTheme(themeId)
-        }
-        
-        // Apply theme color to the stats button
-        val textColor = getThemeColor(currentTheme)
-        binding.statsButton.setTextColor(textColor)
-        
-        // Update the game view to apply theme
-        gameView.invalidate()
     }
     
     /**
@@ -744,5 +733,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    private fun showProgressionScreen(xpGained: Long, newRewards: List<String>) {
+        // Apply theme before showing the screen
+        progressionScreen.applyTheme(currentTheme)
+        
+        // Show the progression screen
+        binding.gameOverContainer.visibility = View.GONE
+        progressionScreen.visibility = View.VISIBLE
+        
+        // Display progression data
+        progressionScreen.showProgress(progressionManager, xpGained, newRewards, currentTheme)
     }
 } 
