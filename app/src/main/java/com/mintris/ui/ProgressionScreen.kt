@@ -74,20 +74,35 @@ class ProgressionScreen @JvmOverloads constructor(
         playerLevelText.text = "Player Level: $playerLevel"
         xpGainText.text = "+$xpGained XP"
         
-        // Begin animation sequence
-        xpProgressBar.setXPValues(playerLevel, currentXP, xpForNextLevel)
-        
-        // Animate XP gain text entrance
-        val xpTextAnimator = ObjectAnimator.ofFloat(xpGainText, "alpha", 0f, 1f).apply {
-            duration = 500
+        // Start with initial animations
+        AnimatorSet().apply {
+            // Fade in the XP gain text
+            val xpTextAnimator = ObjectAnimator.ofFloat(xpGainText, "alpha", 0f, 1f).apply {
+                duration = 800
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+            
+            // Set up the XP progress bar animation sequence
+            val xpBarAnimator = ObjectAnimator.ofFloat(xpProgressBar, "alpha", 0f, 1f).apply {
+                duration = 800
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+            
+            // Play animations in sequence
+            play(xpTextAnimator)
+            play(xpBarAnimator).after(xpTextAnimator)
+            start()
         }
         
-        // Schedule animation for the XP bar after text appears
+        // Set initial progress bar state
+        xpProgressBar.setXPValues(playerLevel, currentXP - xpGained, xpForNextLevel)
+        
+        // Animate the XP gain after a short delay
         postDelayed({
             xpProgressBar.animateXPGain(xpGained, playerLevel, currentXP, xpForNextLevel)
-        }, 600)
+        }, 1000) // Increased delay to 1 second for better visual flow
         
-        // If there are new rewards, show them with animation
+        // If there are new rewards, show them with animation after XP bar animation
         if (newRewards.isNotEmpty()) {
             // Create reward cards
             rewardsContainer.removeAllViews()
@@ -113,18 +128,12 @@ class ProgressionScreen @JvmOverloads constructor(
                     card.animate()
                         .alpha(1f)
                         .translationY(0f)
-                        .setDuration(400)
-                        .setStartDelay((i * 150).toLong())
+                        .setDuration(600) // Increased duration for smoother animation
+                        .setStartDelay((i * 200).toLong()) // Increased delay between cards
                         .setInterpolator(OvershootInterpolator())
                         .start()
                 }
-            }, 2000) // Wait for XP bar animation to finish
-        }
-        
-        // Start with initial animations
-        AnimatorSet().apply {
-            play(xpTextAnimator)
-            start()
+            }, 2500) // Increased delay to wait for XP bar animation to finish
         }
     }
     

@@ -287,13 +287,13 @@ class PlayerProgressionManager(context: Context) {
         private const val KEY_SELECTED_BLOCK_SKIN = "selected_block_skin"
         
         // XP constants
-        private const val BASE_XP = 2000L
-        private const val XP_CURVE_FACTOR = 1.8
-        private const val LEVEL_MULTIPLIER = 0.05
-        private const val XP_PER_LINE = 50L
-        private const val TETRIS_XP_BONUS = 200L
-        private const val PERFECT_CLEAR_XP_BONUS = 400L
-        private const val TIME_XP_PER_MINUTE = 25L
+        private const val BASE_XP = 3000L
+        private const val XP_CURVE_FACTOR = 2.0
+        private const val LEVEL_MULTIPLIER = 0.03
+        private const val XP_PER_LINE = 40L
+        private const val TETRIS_XP_BONUS = 150L
+        private const val PERFECT_CLEAR_XP_BONUS = 300L
+        private const val TIME_XP_PER_MINUTE = 20L
         
         // Theme constants
         const val THEME_CLASSIC = "theme_classic"
