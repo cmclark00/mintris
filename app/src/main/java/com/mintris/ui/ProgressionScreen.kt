@@ -99,7 +99,7 @@ class ProgressionScreen @JvmOverloads constructor(
         
         // Animate the XP gain after a short delay
         postDelayed({
-            xpProgressBar.animateXPGain(xpGained, playerLevel, currentXP, xpForNextLevel)
+            xpProgressBar.animateXPGain(playerLevel, currentXP, xpForNextLevel)
         }, 1000) // Increased delay to 1 second for better visual flow
         
         // If there are new rewards, show them with animation after XP bar animation
