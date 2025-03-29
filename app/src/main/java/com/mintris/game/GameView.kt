@@ -820,7 +820,6 @@ class GameView @JvmOverloads constructor(
                     }
                 }
                 lastTapTime = currentTime
-                return true
             }
             
             MotionEvent.ACTION_MOVE -> {
@@ -878,7 +877,6 @@ class GameView @JvmOverloads constructor(
                         // No direction lock yet, don't process movement
                     }
                 }
-                return true
             }
             
             MotionEvent.ACTION_UP -> {
@@ -911,16 +909,21 @@ class GameView @JvmOverloads constructor(
                 } else if (moveTime < minTapTime && 
                          abs(deltaY) < maxTapMovement && 
                          abs(deltaX) < maxTapMovement) {
-                    // This was a tap, perform click
-                    performClick()
+                    // Quick tap with minimal movement (rotation)
+                    if (currentTime - lastRotationTime >= rotationCooldown) {
+                        Log.d("GameView", "Rotation detected")
+                        gameBoard.rotate()
+                        lastRotationTime = currentTime
+                        invalidate()
+                    }
                 }
                 
                 // Reset direction lock
                 lockedDirection = null
-                return true
             }
         }
-        return super.onTouchEvent(event)
+        
+        return true
     }
     
     /**
